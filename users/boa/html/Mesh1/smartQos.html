@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title></title>
+		<meta id="i18n_pagename" content="index-common">
+	    <meta name="keywords" content=""/>
+	    <meta name="description" content=""/>
+	    <meta http-equiv="Access-Control-Allow-Origin" content="*">
+		<link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.min.css"/>
+		<link rel="stylesheet" type="text/css" href="css/libs/font-awesome.css"/>	
+		<link href="css/bootstrap-switch.min.css" rel="stylesheet" />
+		<link rel="stylesheet" type="text/css" href="css/base.css"/>
+		<link rel="stylesheet" href="css/main.css" />
+		<link type="image/x-icon" href="img/favicon.png" rel="shortcut icon"/>
+		<script src="js/util_gw.js"></script>
+		<!--<script src="js/util_qos.js"></script>-->
+		<script src="js/jquery.js"></script>
+		<script src="js/bootstrap.js"></script>
+		<script src="js/bootstrap-switch.min.js"></script>
+	</head>
+	<body onload="Load_Setting();">
+		<div class="guest_net">
+			<form  action="/boafrm/formIpQoS" method="POST" name="formQosAdd">
+				<input type=hidden name="lan_mask" value="<% getInfo("mask-rom"); %>">
+				<!--<input type="hidden" value="/smartQos.html" name="submit-url">-->
+				<div class="form-group_smart" style="margin-bottom: 10px;">
+					<!--<label style="width: 50px;"></label>-->
+					<label class="i18n" name="title_smart"></label>
+					<div class="switch_check">
+						<input type="checkbox" class="checkbox_switch" data-size="mini" name="enabled" value="ON" />
+					</div>
+				</div>
+				<div class="up_dowm">
+			        <input type="checkbox" name="automaticUplinkSpeed" value="ON" <% getIndex("qosAutoUplinkSpeed");%> onclick="updateLinkState(1)"><span class="i18n" name="AutoUplinkspeed_smart"></span>
+				</div>
+				<div class="form-group_smart"><label class="i18n" name="Uplinkspeed_smart"></label><input class="form_input" type="text" name="manualUplinkSpeed" value="<% getInfo("qosManualUplinkSpeed"); %>"/>Kbps</div>
+				<div class="up_dowm">
+			        <input type="checkbox" name="automaticDownlinkSpeed" value="ON" <% getIndex("qosAutoDownlinkSpeed");%> onclick="updateLinkState(2)"><span class="i18n" name="AutoDownlinkspeed_smart"></span>
+				</div>
+				<div class="form-group_smart"><label class="i18n" name="Downlinkspeed_smart"></label><input class="form_input" type="text" name="manualDownlinkSpeed" value="<% getInfo("qosManualDownlinkSpeed"); %>"/>Kbps</div>
+				<div class="tips"><span class="i18n" name="tips_for_smart"></span></div>
+				<div style="display: none;">
+					<select name="ipversion">
+				    		<option select value="0">ipv4</option>
+				       		</select>
+					<select name="protocol">
+				    		<option select value="0">ip_qos_proto_both</option>
+				    		<option value="1">TCP</option>
+				    		<option value="2">UDP</option>
+				    		</select>
+					<select size="1" name="mode">
+				      <option selected value="1">ip_qos_quarant_minband</option>
+				      	<option value="2">ip_qos_restrict_maxband</option>
+				      </select>
+				<input type="text" name="bandwidth" size="8">
+				<input type="text" name="bandwidth_downlink" size="8">
+				</div>
+				<div class="form-group form-group-btn">
+					<% getInfo("apply_direct_comment_start");%>
+					<button type="submit" value="1" name="save_apply" id="smartQos_sb_button" onclick="return addRuleClick()" class="i18n"></button>
+					<input type="hidden" value="1" name="addQosFlag">
+					<% getInfo("apply_direct_comment_end");%>
+				</div>
+				<input type="hidden" value="/smartQos.html" name="submit-url">
+			</form>
+		</div>
+		
+		<script src="js/jquery.cookie.js"></script>
+	    <!-- 加载语言包文件 -->
+	    <script src="js/jquery.i18n.properties.js"></script>
+	    <script src="js/language.js"></script>
+		<script>
+			var advanced_qos_enable=<%getIndex("advancedIpqosEnable")%>;
+			var qosEnabled_status='<% getIndex("qosEnabled"); %>';
+			var i18nLanguage=getCookie('userLanguage');
+			$(document).ready(function(){
+				//开关按钮
+				$('.checkbox_switch').bootstrapSwitch({
+					onText: "",
+					offText: "",
+					onColor: "success",
+					offColor: "info",
+					size: "small",
+					onSwitchChange: function(event, state) {
+						if (state == true) {
+							//打开
+							$(".checkbox_switch").val("ON");
+							enableTextField(document.formQosAdd.automaticUplinkSpeed);
+ 							enableTextField(document.formQosAdd.automaticDownlinkSpeed);
+ 							if (document.formQosAdd.automaticUplinkSpeed.checked) {  	
+							 	disableTextField(document.formQosAdd.manualUplinkSpeed);
+							 	document.formQosAdd.manualUplinkSpeed.value.visible=false;
+							  }
+							  else {
+							 	enableTextField(document.formQosAdd.manualUplinkSpeed);
+							 	document.formQosAdd.manualUplinkSpeed.value.visible=true;
+							  } 
+							  if (document.formQosAdd.automaticDownlinkSpeed.checked) {  	
+							 	disableTextField(document.formQosAdd.manualDownlinkSpeed);
+							 	document.formQosAdd.manualDownlinkSpeed.value.visible=false;
+							  }
+							  else {
+							 	enableTextField(document.formQosAdd.manualDownlinkSpeed);
+							 	document.formQosAdd.manualDownlinkSpeed.value.visible=true;
+							  }													
+						} else {							
+ 							//关闭
+ 							$(".checkbox_switch").val("OFF");
+							disableTextField(document.formQosAdd.automaticUplinkSpeed);
+ 							disableTextField(document.formQosAdd.automaticDownlinkSpeed);
+ 							disableTextField(document.formQosAdd.manualUplinkSpeed);
+ 							disableTextField(document.formQosAdd.manualDownlinkSpeed);	
+						}
+					}
+	
+				})
+				
+//				var switch_status=$('.checkbox_switch').bootstrapSwitch('state');
+			})
+			function Load_Setting()//页面初始化
+			{
+				if ( qosEnabled_status =='0'){
+					$('[name="enabled"]').bootstrapSwitch('state', false);
+//					document.formQosAdd.enabled.checked=false;
+					disableTextField(document.formQosAdd.automaticUplinkSpeed);
+	 				disableTextField(document.formQosAdd.automaticDownlinkSpeed);
+	 				disableTextField(document.formQosAdd.manualUplinkSpeed);
+	 				disableTextField(document.formQosAdd.manualDownlinkSpeed);
+				} else {
+					$('[name="enabled"]').bootstrapSwitch('state',true);
+//					document.formQosAdd.enabled.checked=true;					
+	 				enableTextField(document.formQosAdd.automaticUplinkSpeed);
+					enableTextField(document.formQosAdd.automaticDownlinkSpeed);
+					if(document.formQosAdd.automaticUplinkSpeed.checked) {
+						disableTextField(document.formQosAdd.manualUplinkSpeed);
+						document.formQosAdd.manualUplinkSpeed.value.visible=false;
+					} else {
+						enableTextField(document.formQosAdd.manualUplinkSpeed);
+						document.formQosAdd.manualUplinkSpeed.value.visible=true;
+					}
+					if(document.formQosAdd.automaticDownlinkSpeed.checked) {
+						disableTextField(document.formQosAdd.manualDownlinkSpeed);
+						document.formQosAdd.manualDownlinkSpeed.value.visible=false;
+					} else {
+						enableTextField(document.formQosAdd.manualDownlinkSpeed);
+						document.formQosAdd.manualDownlinkSpeed.value.visible=true;
+					}
+				}
+				if ( <% getIndex("qosAutoUplinkSpeed"); %> ){
+				document.formQosAdd.automaticUplinkSpeed.checked = true;
+				if(document.formQosAdd.automaticUplinkSpeed.checked) {
+						disableTextField(document.formQosAdd.manualUplinkSpeed);
+						document.formQosAdd.manualUplinkSpeed.value.visible=false;
+					} else {
+						enableTextField(document.formQosAdd.manualUplinkSpeed);
+						document.formQosAdd.manualUplinkSpeed.value.visible=true;
+					}
+				}	
+				
+			}
+			var ip_qos_upspeed_empty,ip_qos_band_invalid,ip_qos_downspeed_empty,ip_qos_ip_invalid;
+			if(i18nLanguage=='en'){
+				ip_qos_upspeed_empty = 'Manual Uplink Speed cannot be empty or less then 100 when Automatic Uplink Speed is disabled.';
+				ip_qos_downspeed_empty = 'Manual Downlink Speed cannot be empty or less then 100 when Automatic Downlink Speed is disabled.';
+				ip_qos_ip_invalid = 'Invalid IP address';
+				ip_qos_band_invalid = 'Invalid input! It should be the decimal number (0-9).';
+			}else{
+				ip_qos_upspeed_empty='自动上行速度关闭时，手动上行速度不能为空且不能比100小.';
+				ip_qos_downspeed_empty = '自动下行速度关闭时，手动下行速度不能为空且不能比100小.';
+				ip_qos_ip_invalid = '无效的IP地址';
+				ip_qos_band_invalid = '无效的输入!必须为0-9的十进制数.';
+			}
+			function updateLinkState(key){//自动上行下载选项
+				if(key==1){
+				  if (document.formQosAdd.automaticUplinkSpeed.checked) {  	
+				 	disableTextField(document.formQosAdd.manualUplinkSpeed);
+				  }
+				  else {
+				 	enableTextField(document.formQosAdd.manualUplinkSpeed);
+				  }
+				}else{ 
+				  if (document.formQosAdd.automaticDownlinkSpeed.checked) {  	
+				 	disableTextField(document.formQosAdd.manualDownlinkSpeed);
+				  }
+				  else {
+				 	enableTextField(document.formQosAdd.manualDownlinkSpeed);
+				  }
+				}
+			}
+			function addRuleClick()
+			{
+			  if (!document.formQosAdd.enabled.checked)
+			  	return true;
+			
+			  if (!document.formQosAdd.automaticUplinkSpeed.checked && (document.formQosAdd.manualUplinkSpeed.value=="" || document.formQosAdd.manualUplinkSpeed.value < 100)) {
+				alert(ip_qos_upspeed_empty);
+				document.formQosAdd.manualUplinkSpeed.focus();
+				return false;
+			  }
+			 
+			  if(!document.formQosAdd.automaticUplinkSpeed.checked && validateKey(document.formQosAdd.manualUplinkSpeed.value) == 0)
+			  {
+			  	alert(ip_qos_band_invalid);
+				document.formQosAdd.manualUplinkSpeed.focus();
+				return false;
+			  }
+			 
+			  if (!document.formQosAdd.automaticDownlinkSpeed.checked && (document.formQosAdd.manualDownlinkSpeed.value=="" || document.formQosAdd.manualDownlinkSpeed.value<100)) {
+				alert(ip_qos_downspeed_empty);
+				document.formQosAdd.manualDownlinkSpeed.focus();
+				return false;
+			  }
+			  
+			  if(!document.formQosAdd.automaticDownlinkSpeed.checked && validateKey(document.formQosAdd.manualDownlinkSpeed.value) == 0)
+			  {
+			  	alert(ip_qos_band_invalid);
+				document.formQosAdd.manualDownlinkSpeed.focus();
+				return false;
+			  }
+			
+			  
+			  if (document.formQosAdd.bandwidth.value!="") {
+			  	if ( validateKey( document.formQosAdd.bandwidth.value ) == 0 ) {
+					alert(ip_qos_band_invalid);
+					document.formQosAdd.bandwidth.focus();
+					return false;
+			  	}
+			   }
+			   
+			   if (document.formQosAdd.bandwidth_downlink.value!="") {
+			  	if ( validateKey( document.formQosAdd.bandwidth_downlink.value ) == 0 ) {
+					alert(ip_qos_band_invalid);
+					document.formQosAdd.bandwidth_downlink.focus();
+					return false;
+			  	}
+			   }
+			   if(advanced_qos_enable)
+			   {
+			   		with(document.formQosAdd)
+			   		{
+						if(phyport.value && bandwidth.value && !checkFieldDigitRange(phyport,0,3,ip_qos_up_phyport_invalid))
+							return false;
+						if(phyport.value && bandwidth_downlink.value && !checkFieldDigitRange(phyport,4,4,ip_qos_down_phyport_invalid))
+			  				return false;
+			   		}
+			   }
+			   return true;
+			}
+		</script>
+	</body>
+</html>

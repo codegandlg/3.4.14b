@@ -1,0 +1,2 @@
+apmib.o: apmib.c apmib.h list.h mibdef.h mibtbl.h
+mibtbl.o: mibtbl.c apmib.h list.h mibdef.h mibtbl.h

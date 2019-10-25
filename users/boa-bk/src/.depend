@@ -1,0 +1,103 @@
+alias.o: alias.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h apform.h \
+ ../apmib/apmib.h trace.h
+boa.o: boa.c boa.h config.h compat.h defines.h globals.h ../apmib/apmib.h \
+ ../apmib/list.h ../apmib/mibdef.h escape.h
+buffer.o: buffer.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h
+cgi.o: cgi.c boa.h config.h compat.h defines.h globals.h ../apmib/apmib.h \
+ ../apmib/list.h ../apmib/mibdef.h escape.h
+cgi_header.o: cgi_header.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h
+config.o: config.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h access.h \
+ ../apmib/apmib.h apform.h trace.h utility.h
+escape.o: escape.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h
+get.o: get.c boa.h config.h compat.h defines.h globals.h ../apmib/apmib.h \
+ ../apmib/list.h ../apmib/mibdef.h escape.h access.h asp_page.h apform.h \
+ ../apmib/apmib.h trace.h
+hash.o: hash.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h
+ip.o: ip.c boa.h config.h compat.h defines.h globals.h ../apmib/apmib.h \
+ ../apmib/list.h ../apmib/mibdef.h escape.h
+log.o: log.c boa.h config.h compat.h defines.h globals.h ../apmib/apmib.h \
+ ../apmib/list.h ../apmib/mibdef.h escape.h
+mmap_cache.o: mmap_cache.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h
+pipe.o: pipe.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h
+queue.o: queue.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h
+range.o: range.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h
+read.o: read.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h
+request.o: request.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h asp_page.h \
+ apform.h ../apmib/apmib.h trace.h remoteUpgrade.h
+response.o: response.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h
+signals.o: signals.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h apform.h \
+ ../apmib/apmib.h trace.h
+util.o: util.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h
+sublog.o: sublog.c compat.h config.h
+select.o: select.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h \
+ remoteUpgrade.h
+asp_page.o: asp_page.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h asp_page.h \
+ ../apmib/apmib.h apform.h trace.h remoteUpgrade.h
+deviceProcIf.o: deviceProcIf.c deviceProcIf.h
+remoteUpgrade.o: remoteUpgrade.c remoteUpgrade.h cJSON.h md5.h boa.h \
+ config.h compat.h defines.h globals.h ../apmib/apmib.h ../apmib/list.h \
+ ../apmib/mibdef.h escape.h apform.h ../apmib/apmib.h trace.h utility.h
+fmtcpip.o: fmtcpip.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h \
+ ../apmib/apmib.h apform.h trace.h utility.h ../apmib/mibtbl.h \
+ ../apmib/apmib.h asp_page.h
+fmfwall.o: fmfwall.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h apform.h \
+ ../apmib/apmib.h trace.h utility.h asp_page.h cJSON.h
+fmlinuxvlan.o: fmlinuxvlan.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h apform.h \
+ ../apmib/apmib.h trace.h utility.h asp_page.h
+utility.o: utility.c ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h \
+ utility.h
+fmget.o: fmget.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h asp_page.h \
+ ../apmib/apmib.h apform.h trace.h utility.h deviceProcIf.h cJSON.h \
+ remoteUpgrade.h
+fmwlan.o: fmwlan.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h asp_page.h \
+ ../apmib/apmib.h apform.h trace.h utility.h
+fmmgmt.o: fmmgmt.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h \
+ ../apmib/apmib.h apform.h trace.h utility.h ../apmib/mibtbl.h \
+ ../apmib/apmib.h asp_page.h cJSON.h
+version.o: version.c
+fmddns.o: fmddns.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h asp_page.h \
+ ../apmib/apmib.h apform.h trace.h utility.h
+fmroute.o: fmroute.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h asp_page.h \
+ ../apmib/apmib.h apform.h trace.h utility.h
+fmipv6.o: fmipv6.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h asp_page.h \
+ ../apmib/apmib.h apform.h trace.h utility.h ../system/sysconf.h
+fmbt.o: fmbt.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h asp_page.h \
+ ../apmib/apmib.h apform.h trace.h utility.h
+fmpocketap.o: fmpocketap.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h asp_page.h \
+ ../apmib/apmib.h apform.h trace.h utility.h
+fmdiskmanage.o: fmdiskmanage.c boa.h config.h compat.h defines.h \
+ globals.h ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h \
+ apform.h ../apmib/apmib.h trace.h utility.h asp_page.h
+fmmultiap.o: fmmultiap.c boa.h config.h compat.h defines.h globals.h \
+ ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h escape.h asp_page.h \
+ ../apmib/apmib.h utility.h apform.h trace.h
+md5.o: md5.c md5.h
+cJSON.o: cJSON.c cJSON.h

@@ -1,0 +1,344 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title></title>
+		<meta id="i18n_pagename" content="index-common">
+	    <meta name="keywords" content=""/>
+	    <meta http-equiv="Access-Control-Allow-Origin" content="*">
+		<link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.min.css"/>
+		<link rel="stylesheet" type="text/css" href="css/libs/font-awesome.css"/>		 
+		<!--<link rel="stylesheet" type="text/css" href="css/compiled/theme_styles.css"/>-->
+		<link rel="stylesheet" type="text/css" href="css/base.css"/>
+		<link rel="stylesheet" href="css/main.css" />
+		<link type="image/x-icon" href="img/favicon.png" rel="shortcut icon"/>
+		<style type="text/css">
+			.topo{
+				overflow: hidden;
+			}
+		</style>
+	</head>
+	<body style="background: #f5f5f5;overflow: hidden;">
+				<div class="main_content">
+		 			<div class="link_content_con">		 				
+		 				<div class="link_content">
+			 				<ul>
+			 					<li><a href="internet.html"><img src="img/content_icon_network@2x.png" class="link_img" /></a></li>
+			 					<li><a href="#"><span><i class="fa fa-long-arrow-up"></i><span id="wanUplinkRate">0Kbps</span></span><div class="link_line"><div class="connect_status"></div><div class="connect_status2"></div></div><span><i class="fa fa-long-arrow-down"></i><span id="wanDownlinkRate">0Kbps</span></span></a></li>
+			 					<li><a href="wifiset.html"><img src="img/content_icon_machine.png" class="link_img" /></a></li>
+			 					<li><a href="#"><span><span>2.4G</span></span><div class="link_line"><div class="connect_status"></div><div class="connect_status2"></div></div><span><span>5G</span></span></a></li>
+			 					<li><a href="terminal.html"><img src="img/content_icon_terminal@2x.png" class="link_img" /><div class="terminal_status"><span><%getTotalOnlineClientNum();%></span></div></a></li>
+			 				</ul>
+			 				
+			 				<!--<div class="time_count"><span>上网时长：<% getInfo("uptime"); %></span></div>-->
+		 				</div>
+		 			</div>
+		 			<div class="link_topo">
+		 				<div class="home_title"><span class="i18n" name="MeshConnect_title"></span></div>
+		 				<div class="topo"><div class="topo_detail"><canvas id="canvas" width="1200px" height="800px"></canvas></div></div>
+		 			</div>
+		 			<div class="version_info">
+		 				<div class="home_title"><span class="i18n" name="basicInformation_title"></span></div>
+		 				<div class="version_info_con table-responsive">
+							<table class="table">
+								<tr>
+									<td class="i18n" name="runTime_index" style="text-align: right;"></td>
+									<td class="import_word"><% getInfo("uptime"); %></td>
+									<td class="i18n" name="24g_index"  style="text-align: right;"></td><%getInfo("wlan1-status");%>
+									<td class="import_word ssid_2G"><%getInfo("ssid_drv");%></td>
+								</tr>
+								<tr>
+									<td class="i18n" name="wanipAddr_index" style="text-align: right;"></td>
+									<td class="import_word"><% getInfo("wan-ip"); %></td>
+									<td class="i18n" name="channel_index"  style="text-align: right;"></td>
+									<td class="import_word"><%getInfo("channel_drv");%></td>
+								</tr>
+								<tr>
+									<td class="i18n" name="wanMacAddr_index" style="text-align: right;"></td>
+									<td class="import_word"><% getInfo("wan-hwaddr"); %></td>
+									<td class="i18n" name="5g_index"  style="text-align: right;"></td><%getInfo("wlan0-status");%>
+									<td class="import_word ssid_5G"><%getInfo("ssid_drv");%></td>
+								</tr>
+								<tr>
+									<td class="i18n" name="softVersion_index" style="text-align: right;"></td>
+									<td class="import_word"><% getInfo("fwVersion"); %></td>
+									<td class="i18n" name="channel5G_index"  style="text-align: right;"></td>
+									<td class="import_word"><%getInfo("channel_drv");%></td>
+								</tr>
+							</table>
+		 				</div>
+		 			</div>
+		 		</div>
+		<script src="js/jtopo.js"></script>
+		<script src="js/jquery.js"></script>
+		<script src="js/bootstrap.js"></script>
+	    <script src="js/jquery.cookie.js"></script>
+	    <!-- 加载语言包文件 -->
+	    <script src="js/jquery.i18n.properties.js"></script>
+	    <script src="js/language.js"></script>
+		<script src="js/xmlhttpreq.js"></script>
+		<script type="text/javascript">
+		 	//***************拓扑结构图***************
+//		var object_json={"device_name":"EasyMesh_Device","ip_addr":"192.168.1.10","mac_address":"00e04c8136c1","neighbor_devices":[{"neighbor_mac":"00e04c8199c1","neighbor_name":"EasyMesh_Device","neighbor_rssi":"15","neighbor_band":"5G"}],"station_info":[{"station_mac":"2054fa2a55ab","station_rssi":"45","station_connected_band":"5G","station_downlink":"292","station_uplink":"24"}],"child_devices":[{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.100","mac_address":"00e04c8199c1","neighbor_devices":[],"station_info":[{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"}],"child_devices":[{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.100","mac_address":"00e04c8199c1","neighbor_devices":[],"station_info":[],"child_devices":[]}]},{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.100","mac_address":"00e04c8199c1","neighbor_devices":[],"station_info":[],"child_devices":[{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.101","mac_address":"00e04c7396c1","neighbor_devices":[],"station_info":[{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"}],"child_devices":[]}]},{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.102","mac_address":"00e04c8196c1","neighbor_devices":[{"neighbor_mac":"00e04c7396c1","neighbor_name":"EasyMesh_Device","neighbor_rssi":"40","neighbor_band":"5G"}],"station_info":[],"child_devices":[{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.101","mac_address":"00e04c7396c1","neighbor_devices":[],"station_info":[],"child_devices":[]},{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.101","mac_address":"00e04c7396c1","neighbor_devices":[],"station_info":[{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"}],"child_devices":[]},{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.101","mac_address":"00e04c7396c1","neighbor_devices":[],"station_info":[{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"}],"child_devices":[]},{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.101","mac_address":"00e04c7396c1","neighbor_devices":[],"station_info":[{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"}],"child_devices":[]},{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.101","mac_address":"00e04c7396c1","neighbor_devices":[],"station_info":[{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"}],"child_devices":[{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.100","mac_address":"00e04c8199c1","neighbor_devices":[],"station_info":[{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"}]}]}]}]};
+//		var object_json={"device_name":"EasyMesh_Device","ip_addr":"192.168.1.10","mac_address":"00e04c8136c1","neighbor_devices":[{"neighbor_mac":"00e04c8199c1","neighbor_name":"EasyMesh_Device","neighbor_rssi":"15","neighbor_band":"5G"},{"neighbor_mac":"00e04c8196c1","neighbor_name":"EasyMesh_Device","neighbor_rssi":"20","neighbor_band":"ERR"}],"station_info":[{"station_mac":"2054fa2a55ab","station_rssi":"45","station_connected_band":"5G","station_downlink":"292","station_uplink":"24"},{"station_mac":"d016b4f4083f","station_rssi":"38","station_connected_band":"5G","station_downlink":"234","station_uplink":"6"},{"station_mac":"a45046fdc3c5","station_rssi":"49","station_connected_band":"5G","station_downlink":"866","station_uplink":"6"},{"station_mac":"c0ccf8d4ba1f","station_rssi":"72","station_connected_band":"5G","station_downlink":"866","station_uplink":"24"},{"station_mac":"9c4fda6281fa","station_rssi":"54","station_connected_band":"2G","station_downlink":"65","station_uplink":"24"},{"station_mac":"4c49e30a1cee","station_rssi":"43","station_connected_band":"2G","station_downlink":"65","station_uplink":"1"},{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"},{"station_mac":"c09ad0de69af","station_rssi":"40","station_connected_band":"2G","station_downlink":"26","station_uplink":"24"}],"child_devices":[{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.100","mac_address":"00e04c8199c1","neighbor_devices":[],"station_info":[{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"},{"station_mac":"c09ad0de69af","station_rssi":"40","station_connected_band":"2G","station_downlink":"26","station_uplink":"24"},{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"},{"station_mac":"c09ad0de69af","station_rssi":"40","station_connected_band":"2G","station_downlink":"26","station_uplink":"24"}],"child_devices":[]},{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.100","mac_address":"00e04c8199c1","neighbor_devices":[],"station_info":[],"child_devices":[]},{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.102","mac_address":"00e04c8196c1","neighbor_devices":[{"neighbor_mac":"00e04c7396c1","neighbor_name":"EasyMesh_Device","neighbor_rssi":"40","neighbor_band":"5G"}],"station_info":[],"child_devices":[]}]}; 	
+//		var object_json={"device_name":"EasyMesh_Device","ip_addr":"192.168.1.10","mac_address":"d05157b22e3d","neighbor_devices":[{"neighbor_mac":"00e04c8199c1","neighbor_name":"EasyMesh_Device","neighbor_rssi":"18","neighbor_band":"5G"}],"station_info":[{"station_mac":"8cec4b7b2151","station_rssi":"100","station_connected_band":"ETHERNET","station_downlink":"0","station_uplink":"0","station_ip":"192.168.1.100","station_hostname":"lichunyi","station_brand":"Dell","station_link_time":"null"}],"child_devices":[{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.101","mac_address":"00e04c8199c1","neighbor_devices":[{"neighbor_mac":"d05157b22e36","neighbor_name":"EasyMesh_Device","neighbor_rssi":"36","neighbor_band":"ERR"}],"station_info":[],"child_devices":[{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.102","mac_address":"d05157b22e36","neighbor_devices":[{"neighbor_mac":"d05157b22e21","neighbor_name":"agent_刘汉文","neighbor_rssi":"0","neighbor_band":"5G"}],"station_info":[],"child_devices":[{"device_name":"agent_刘汉文","ip_addr":"192.168.1.254","mac_address":"d05157b22e21","neighbor_devices":[],"station_info":[],"child_devices":[]}]}]}]};
+		var object_json=<%showMeshTopology()%>;
+		var interval;
+		var interval_val_time=0;
+		var i18nLanguage=getCookie('userLanguage');
+			function getCookie(name) {
+			  var cookies = document.cookie;
+			  var list = cookies.split("; ");          // 解析出名/值对列表
+			      
+			  for(var i = 0; i < list.length; i++) {
+			    var arr = list[i].split("=");          // 解析出名和值
+			    if(arr[0] == name)
+			      return decodeURIComponent(arr[1]);   // 对cookie值解码
+			  } 
+			  return "";
+			}
+		$(document).ready(function(){	
+			if(object_json){
+				intTop();
+				
+			}else{
+				 addNode1("主设备", 'content_icon_machine.png');
+			}
+//			var upspeed_value='<%getInfo("wanUplinkRate");%>';
+//			var downspeed_value='<%getInfo("wanDownlinkRate");%>';
+//			$("#wanUplinkRate").text(upspeed_value);
+//			$("#wanDownlinkRate").text(downspeed_value);
+			$(".topo").mouseover(function(){
+				$(".topo").css("overflow","auto");
+			}).mouseout(function(){
+				$(".topo").css("overflow","hidden");
+			})
+		});
+		var interval = setInterval(eachTime,3000);
+		function eachTime(){
+			sender();
+		}
+		
+		function send_req(){
+			//var upspeed_value='<%getInfo("wanUplinkRate");%>';
+			//var downspeed_value='<%getInfo("wanDownlinkRate");%>';
+			//var object_json=<%showMeshTopology()%>;
+			var upspeed_value,downspeed_value;
+			//$.ajax({
+			//	type:'post',
+			//	url:'',
+			//	data:{upspeed:upspeed_value,downspeed:downspeed_value},
+			//	success:function(data){
+			//		console.log(data);
+			//	}
+			//})
+		  	//})
+		}
+		var canvas = document.getElementById('canvas');  
+    	var stage = new JTopo.Stage(canvas);//创建舞台对象 
+    	stage.setCenter(500, 0);
+    	var scene = new JTopo.Scene(stage);  //创建场景对象  
+//  	var container = new JTopo.Container();
+//  	var node_location=new Object();
+//  	var node_locationList=[];
+//  	var node_message=new Object();
+//  	var node_messageList=[];
+//  	console.log(container);
+//          // 流式布局（水平、垂直间隔均为10)
+//         var flowLayout = JTopo.Layout.FlowLayout();
+//          //容器布局样式----流式布局
+//          container.layout = flowLayout;
+//          container.width=22;
+//          container.height=22;   
+//          container.borderRadius=12;
+//          container.shadow= false;
+//          container.showSelected=false;
+////          container.shadowColor: "rgba(0,0,0,0.5)"
+//			container.shadowOffsetX= 0;
+//			container.shadowOffsetY= 0;
+//			container.text="更多";
+//			container.font= "8px";
+//			container.fontColor="255,255,255";
+//			container.textOffsetX= 0;
+//			container.textOffsetY= -26;
+//			container.fillColor="244,195,30";
+//			container.alpha=1;
+//			container.x=500;
+//			container.y=0;
+//          scene.add(container);
+//          container.click(function(){
+//          	alert(11111111111);
+//          })
+	
+			 //加节点  
+		    function addNode1(name,mac,img,alarm,x,y){ 
+		   	 	var node=new JTopo.Node(); 
+//		   	 	var aaa=node.x;
+//		   	 	console.log(aaa);
+		   	 	var aaa=node;
+		        node.fontColor = '77,77,77';
+		        node.setImage('img/'+img); 
+		        if(i18nLanguage=='en'){
+		        	node.alarm = "Access number："+alarm;
+		        }else{
+		        	node.alarm = "接入数："+alarm;
+		        }
+		        
+		        node.alarmColor = '255,255,255';
+				node.alarmFont = "12px 微软雅黑";
+				node.alarmStrokeStyle="rgba(255,255,255,1)";
+				node.alarmFillStyle="rgba(255,255,255,1)";
+				node.alarmFillColor="255,255,0";
+		        node.shadow = false;
+		        node.fillColor = "255,255,255";//底色
+		        node.showSelected=false;
+				node.textOffsetY = -15;
+				node.setLocation(x,y);
+				if(i18nLanguage=='en'){
+		        	node.tip = "Name:"+name+"  Mac:"+mac;
+		        }else{
+		        	node.tip = "名称："+name+"  Mac地址："+mac;
+		        }
+				
+		        node.setSize(64,64);// 设置节点尺寸
+				node.mouseover(function(){
+		            this.text = this.tip;
+		        });//鼠标经过显示其设备名称
+		        node.mouseout(function(){
+		            this.text = "";
+		        });
+//		        var _x,_y;
+//		        for(var i in aaa){
+////		        	console.log(node[i]);
+//		        	_x=node["x"];
+//		        	_y=node["y"];
+//		        }
+//		        node_location={
+//		        		x:_x,
+//		        		y:_y
+//		        }
+//		        node_locationList.push(node_location);
+//		        console.log(node_locationList);
+		        
+		        scene.add(node); 
+		        return node; 
+		   }  
+		  //连线  
+		    function addLink(nodeA, nodeZ){  
+       			var link;
+                link = new JTopo.FlexionalLink(nodeA, nodeZ);               
+                link.strokeColor='137,206,237';
+				link.dashedPattern = 8;//设置线的间隔，显示则是虚线形式，默认为实线
+				link.alpha=0.5;//设置线的透明度
+				link.shadow = false;
+				link.fillColor="255,255,255";
+				link.borderColor="255,255,255";
+				link.shadowColor= "rgba(255,255,255,0.5)";
+				link.showSelected=false;
+                scene.add(link);
+                return link;
+    		}
+		    function GetDevStatus(){
+		    	parent.$(".li_4").addClass("active");
+		    	parent.$(".li_4").siblings().removeClass("active");
+		    	parent.$(".iframe_holder").attr("src","terminal.html");
+		    }
+    					var treeNodeList = object_json;
+    					
+				       function intTop(){				       	
+				        if(treeNodeList["device_name"]){
+				        	
+				        	var length1;
+					      	if(0 != object_json["station_info"].length){
+						    	length1=object_json["station_info"].length;
+						    }else{
+						    	length1=0;
+						    }
+						    var rootNode;
+						    if(0 != object_json["child_devices"].length){
+						    	rootNode = addNode1(treeNodeList["device_name"],treeNodeList["mac_address"],'content_icon_machine.png',length1,500,0);
+						    }else{
+						    	rootNode = addNode1(treeNodeList["device_name"],treeNodeList["mac_address"],'content_icon_machine.png',length1,500,0);
+						    }					      	
+					      	rootNode.addEventListener("click", function(event){
+	 						    GetDevStatus();
+	 						});	 						
+					      	  $.each(treeNodeList["child_devices"], function(i, row){	
+					      	  	  	if(row["device_name"]){
+					      	  	  		
+					      	  	  		var length2;
+								      	if(0 != row["station_info"].length){
+									    	length2=row["station_info"].length;
+									    }else{
+									    	length2=0;
+									    }
+						      	  	  	var node = addNode1(row["device_name"],treeNodeList["mac_address"],'content_icon_machine_blue@2x.png',length2,300,0);
+							      		node.addEventListener("click", function(event){
+				 						    GetDevStatus();
+				 						});
+				 						addLink(rootNode, node); 
+					      	  	  	}else{
+					      	  	  		return;
+					      	  	  	}					      		  										 						
+						                $.each(row["child_devices"], function(i, row1){
+						                	if(row1["device_name"]){
+						                		var length3;
+										      	if(0 != row1["station_info"].length){
+											    	length3=row1["station_info"].length;
+											    }else{
+											    	length3=0;
+											    }
+						                		var node1 = addNode1(row1["device_name"],treeNodeList["mac_address"],'content_icon_machine_blue@2x.png',length3,400,200); 
+							                    node1.addEventListener("click", function(event){
+						 						    GetDevStatus();
+						 						});
+								              	addLink(node, node1);
+						                	}else{
+						                		return;
+						                	}						              	  
+							              		$.each(row1["child_devices"], function(i, row2){
+							              			if(row2["device_name"]){
+							              				var length4;
+												      	if(0 != row2["station_info"].length){
+													    	length4=row2["station_info"].length;
+													    }else{
+													    	length4=0;
+													    }
+							              				var node2 = addNode1(row2["device_name"],treeNodeList["mac_address"],'content_icon_machine_blue@2x.png',length4,500,300); 
+									                    node2.addEventListener("click", function(event){
+								 						    GetDevStatus();
+								 						});
+										              	addLink(node1, node2);
+							              			}else{
+							              				return;
+							              			}
+								              	  
+								               });
+						                });
+					    		  });
+					    }
+				        // 树形布局  
+				        scene.doLayout(JTopo.layout.TreeLayout('down', 110, 152));   
+				       }
+		//跳转
+		$(".link_content ul li").click(function(){
+			var href_scape=$(this).find("a").attr("href");
+			if(href_scape=="internet.html"){
+				parent.$(".nav-pills>li").removeClass("active");
+				parent.$(".li_2").addClass("active");				
+			}else
+			if(href_scape=="wifiset.html"){
+				parent.$(".nav-pills>li").removeClass("active");
+				parent.$(".li_3").addClass("active");
+			}else
+			if(href_scape=="terminal.html"){
+				parent.$(".nav-pills>li").removeClass("active");
+				parent.$(".li_4").addClass("active");
+			}else{
+				return;
+			}
+		})
+	</script>
+	</body>
+</html>

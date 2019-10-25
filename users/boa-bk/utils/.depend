@@ -1,0 +1,13 @@
+flash.o: flash.c ../apmib/apmib.h ../apmib/list.h ../apmib/mibdef.h \
+ ../apmib/mibtbl.h ../apmib/apmib.h \
+ /home/zhuhaopeng/test/server_ch/rtl819x_v3.4.14b/linux-3.10/drivers/net/wireless/rtl8192cd/ieee802_mib.h \
+ /home/zhuhaopeng/test/server_ch/rtl819x_v3.4.14b/linux-3.10/drivers/net/wireless/rtl8192cd/./core/core_ieee802_mib.h \
+ /home/zhuhaopeng/test/server_ch/rtl819x_v3.4.14b/linux-3.10/drivers/net/wireless/rtl8192cd/./8192cd_common.h
+fwd.o: fwd.c
+uart.o: uart.c
+fwupg.o: fwupg.c ../src/boa.h ../src/config.h ../src/compat.h \
+ ../src/defines.h ../src/globals.h ../src/../apmib/apmib.h \
+ ../src/../apmib/list.h ../src/../apmib/mibdef.h ../src/escape.h \
+ ../src/apform.h ../apmib/apmib.h ../src/trace.h ../src/utility.h
+utility.o: ../src/utility.c ../apmib/apmib.h ../apmib/list.h \
+ ../apmib/mibdef.h ../src/utility.h

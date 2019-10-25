@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title></title>
+		<meta id="i18n_pagename" content="index-common">
+	    <meta name="keywords" content=""/>
+	    <meta name="description" content=""/>
+	    <meta http-equiv="Access-Control-Allow-Origin" content="*">
+		<link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.min.css"/>
+		<link rel="stylesheet" type="text/css" href="css/libs/font-awesome.css"/>	
+		<link href="css/bootstrap-switch.min.css" rel="stylesheet" />
+		<link rel="stylesheet" type="text/css" href="css/base.css"/>
+		<link rel="stylesheet" href="css/main.css" />
+		<link type="image/x-icon" href="img/favicon.png" rel="shortcut icon"/>
+	</head>
+	<body onload="Load_Setting()">
+		<div class="guest_net">
+			<form action="/boafrm/formAddMeshNode" method="post" name="addnode_form">				
+				<div class="form-group_smart"><label class="i18n" name="sn_addnode"></label><input class="form_input" type="text" id="snpassword" name="sn" onkeyup="addCheck()"/></div>
+				<div class="form-group form-group-btn node_btn">
+					<button type="submit" value="Save" name="addnode" class="i18n addnode_button"></button>
+				</div>
+				<input type="hidden" value="/addnode.html" name="submit-url">
+			</form>
+			
+		</div>
+		<script src="js/jquery.js"></script>
+		<script src="js/bootstrap.js"></script>
+		<script src="js/bootstrap-switch.min.js"></script>
+		<!--<script type="text/javascript" src="js/lanuage.js"></script>-->
+		<script src="js/jquery.cookie.js"></script>
+	    <!-- 加载语言包文件 -->
+	    <script src="js/jquery.i18n.properties.js"></script>
+	    <script src="js/language.js"></script>
+		<script>
+			$(document).ready(function(){
+				
+				
+			})
+			document.addnode_form.addnode.disabled=false;
+			function addCheck(){
+				if(!getValue("snpassword").match(/[A-Za-z0-9]+$/)){
+					alert("请输入数字或字母！");
+					return false;
+				}
+				if(getValue("snpassword").length>21){
+					alert("SN码位数超出范围，请输入21位有效数字");
+					return false;
+				}
+				if(getValue("snpassword").length==21){
+					document.addnode_form.addnode.disabled=false;
+				document.addnode_form.addnode.style.backgroundColor="#89CEED";
+				}				
+			}
+			function getValue(id) { 
+			 	return document.getElementById(id).value; 		        
+		   	}
+			function Load_Setting(){
+				document.addnode_form.addnode.disabled=true;
+				document.addnode_form.addnode.style.backgroundColor="#ccc";
+			}
+		</script>
+	</body>
+</html>

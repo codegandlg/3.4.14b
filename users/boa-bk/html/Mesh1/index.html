@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title></title>
+		<meta id="i18n_pagename" content="index-common">
+	    <meta name="keywords" content=""/>
+		<link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.min.css"/>
+		<link rel="stylesheet" type="text/css" href="css/libs/font-awesome.css"/>		 
+		<!--<link rel="stylesheet" type="text/css" href="css/compiled/theme_styles.css"/>-->
+		<link rel="stylesheet" type="text/css" href="css/base.css"/>
+		<link rel="stylesheet" href="css/main.css" />
+		<link type="image/x-icon" href="favicon.png" rel="shortcut icon"/>
+		<script>
+			var wlan_num = <% getIndex("wlan_num"); %>;
+			if (wlan_num > 0){
+				ssid_drv[0] ='<%getInfo("ssid_drv");%>';
+				channel_drv[0] ='<%getInfo("channel_drv");%>';
+			}
+			if (wlan_num > 1){
+				ssid_drv[1] ='<%getInfo("ssid_drv");%>';
+				channel_drv[1] ='<%getInfo("channel_drv");%>';
+			}
+			
+		</script>
+	</head>
+	<body>
+				<div class="main_content">
+		 			<div class="link_content_con">		 				
+		 				<div class="link_content">
+			 				<ul>
+			 					<li><a href="#"><img src="img/content_icon_network@2x.png" class="link_img" /></a></li>
+			 					<li><a href="#"><span><i class="fa fa-long-arrow-up"></i><span>125Kbps</span></span><div class="link_line"><div class="connect_status"></div><div class="connect_status2"></div></div><span><i class="fa fa-long-arrow-down"></i><span>1267Kbps</span></span></a></li>
+			 					<li><a href="#"><img src="img/content_icon_machine.png" class="link_img" /></a></li>
+			 					<li><a href="#"><span><span>2.4G</span></span><div class="link_line"><div class="connect_status"></div><div class="connect_status2"></div></div><span><span>5G</span></span></a></li>
+			 					<li><a href="#"><img src="img/content_icon_terminal@2x.png" class="link_img" /><div class="terminal_status"><span>6</span></div></a></li>
+			 				</ul>
+			 				
+			 				<!--<div class="time_count"><span>上网时长：<% getInfo("uptime"); %></span></div>-->
+		 				</div>
+		 			</div>
+		 			<div class="link_topo">
+		 				<div class="home_title"><span class="i18n" name="MeshConnect_title"></span></div>
+		 				<div class="topo"><a href="#"><!--<img src="img/topo.PNG" alt="" />--><canvas id="canvas" width="800px" height="250"></canvas></a></div>
+		 			</div>
+		 			<div class="version_info">
+		 				<div class="home_title"><span class="i18n" name="basicInformation_title"></span></div>
+		 				<div class="version_info_con table-responsive">
+							<table class="table">
+								<tr>
+									<td class="i18n" name="runTime_index" style="text-align: right;"></td>
+									<td class="import_word"><% getInfo("uptime"); %></td>
+									<td class="i18n" name="24g_index"  style="text-align: left;"></td><%getInfo("wlan1-status");%>
+									<td class="import_word ssid_2G"><%getInfo("ssid_drv");%></td>
+								</tr>
+								<tr>
+									<td class="i18n" name="wanipAddr_index"  style="text-align: right;"></td>
+									<td class="import_word"><% getInfo("wan-ip"); %></td>
+									<td class="i18n" name="channel_index"  style="text-align: left;"></td>
+									<td class="import_word"><%getInfo("channel_drv");%></td>
+								</tr>
+								<tr>
+									<td class="i18n" name="wanMacAddr_index"  style="text-align: right;"></td>
+									<td class="import_word"><% getInfo("wan-hwaddr"); %></td>
+									<td class="i18n" name="5g_index"  style="text-align: left;"></td><%getInfo("wlan0-status");%>
+									<td class="import_word ssid_5G"><%getInfo("ssid_drv");%></td>
+								</tr>
+								<tr>
+									<td class="i18n" name="softVersion_index"  style="text-align: right;"></td>
+									<td class="import_word"><% getInfo("fwVersion"); %></td>
+									<td class="i18n" name="channel5G_index"  style="text-align: left;"></td>
+									<td class="import_word"><%getInfo("channel_drv");%></td>
+								</tr>
+								<!--<tr>
+									<td>DNS1</td>
+									<td class="import_word">10.0.1.1</td>
+									<td>运行时间</td>
+									<td class="import_word"><% getInfo("uptime"); %></td>
+								</tr>
+								<tr>
+									<td>DNS2</td>
+									<td class="import_word">172.0.13.230</td>
+									<td>当前版本</td>
+									<td class="import_word"><% getInfo("fwVersion"); %></td>
+								</tr>-->
+							</table>
+		 				</div>
+		 			</div>
+		 		</div>
+		<script src="js/jtopo.js"></script>
+		<script src="js/jquery.js"></script>
+		<script src="js/bootstrap.js"></script>
+	    <script src="js/jquery.cookie.js"></script>
+	    <!-- 加载语言包文件 -->
+	    <script src="js/jquery.i18n.properties.js"></script>
+	    <script src="js/language.js"></script>
+		
+		<script type="text/javascript">
+		 	//***************拓扑结构图***************
+			$(document).ready(function(){					
+			var canvas = document.getElementById('canvas');
+			var stage = new JTopo.Stage(canvas);
+
+			var scene = new JTopo.Scene();
+			stage.add(scene);
+			
+//			var cloudNode = new JTopo.Node();
+//			cloudNode.setSize(64, 64);//设置根节点大小
+//			cloudNode.setLocation(360,10);	//设置根节点位置
+//			cloudNode.setImage('img/content_icon_machine.png');
+//			cloudNode.layout = {type: 'tree', width:120, height: 200}//设置节点之间的高度和宽度
+//			
+//			scene.add(cloudNode);
+//			
+//			for(var i=1; i<6; i++){
+//				var node = new JTopo.Node();
+//				node.setSize(64, 64);	
+//				node.setImage('img/content_icon_machine_blue@2x.png');
+//				node.setLocation(120,220);
+//				
+//				scene.add(node);								
+//				var link = new JTopo.Link(cloudNode, node);
+//				link.strokeColor='137,206,237';
+//				link.dashedPattern = 18;//设置线的间隔，显示则是虚线形式，默认为实线
+//				link.alpha=0.5;//设置线的透明度
+//				scene.add(link);
+//			}
+//			JTopo.layout.layoutNode(scene, cloudNode, false);
+			//******************设置网络断开和连接状态**********************
+			
+			function node(w,h,x, y, img){
+                var node = new JTopo.Node();
+                node.setSize(w,h);
+                node.setImage('img/' + img);                   
+                node.setLocation(x, y);                
+                scene.add(node);
+                return node;
+            }                
+            
+            function linkNode(nodeA, nodeZ){
+                var link;
+                link = new JTopo.Link(nodeA, nodeZ);               
+//              link.direction = 'vertical';
+                link.strokeColor='137,206,237';
+				link.dashedPattern = 18;//设置线的间隔，显示则是虚线形式，默认为实线
+				link.alpha=0.5;//设置线的透明度
+                scene.add(link);
+                return link;
+            }
+            var s1 = node(64,64,180, 50, 'content_icon_machine_blue@2x.png');
+            var s2 = node(64,64,420, 50, 'content_icon_machine_blue@2x.png');
+            var s3 = node(64,64,200, 130, 'content_icon_machine_blue@2x.png');
+            var s4 = node(64,64,400, 130, 'content_icon_machine_blue@2x.png');
+            var s5 = node(64,64,300, 180, 'content_icon_machine_blue@2x.png');
+            var g1 = node(64,64,300, 0, 'content_icon_machine.png');
+            linkNode(s1, g1);
+            linkNode(s2, g1);
+            linkNode(s3, g1);
+            linkNode(s4, g1);
+            linkNode(s5, g1);
+            stage.add(scene);
+		});
+	</script>
+	</body>
+</html>
