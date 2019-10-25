@@ -877,14 +877,15 @@ int getInfo(request *wp, int argc, char **argv)
 		return req_format_write(wp, "%dday:%dh:%dm:%ds",
 							day, hr, mn, sec);
 	}
+
 	else if(( !strcmp(name, "wanUplinkRate"))||( !strcmp(name, "wanDownlinkRate"))) {
         wanRate.ifname="eth1";
-			ret=getProcIfData(&wanRate);
+//			ret=getProcIfData(&wanRate);
 
 		//printf("%s:--------->%d:  uplinkRate=%0.2lf  downlink=%0.2lf",__FUNCTION__,__LINE__,wanRate.txRate,wanRate.rxRate);
 		if( !strcmp(name, "wanUplinkRate"))
 		{ 
-		  return req_format_write(wp, "%dKbps",(int)(wanRate.txRate)*8);
+		  return req_format_write(wp, "%dKbps",(int)(wanRate.txRate)*8); 
 		}
 		else if( !strcmp(name, "wanDownlinkRate"))
 		{
