@@ -23,15 +23,15 @@ int main(void)
 
 	//printf("wanRate rxRate = %.2lf\n", wanRate.rxRate);
 	//printf("wanRate txRate = %.2lf\n", wanRate.txRate);
-	if (wanRate.txRate < 1000)
-		sprintf(txRate, "%.2lfKbps", wanRate.txRate);
+	if ((int)wanRate.txRate*8 < 1000)
+		sprintf(txRate, "%.2lfKbps", (int)wanRate.txRate*8);
 	else
-		sprintf(txRate, "%.2lfMbps", wanRate.txRate/1000);
+		sprintf(txRate, "%.2lfMbps", ((int)wanRate.txRate*8)/1000);
 
-	if (wanRate.rxRate < 1000)
-		sprintf(rxRate, "%.2lfKbps", wanRate.rxRate);
+	if ((int)wanRate.rxRate*8 < 1000)
+		sprintf(rxRate, "%.2lfKbps", (int)wanRate.rxRate*8);
 	else
-		sprintf(rxRate, "%.2lfMbps", wanRate.rxRate/1000);
+		sprintf(rxRate, "%.2lfMbps", ((int)wanRate.rxRate*8)/1000);
 	
 	data=getenv("QUERY_STRING");  
 	if(data==NULL)    
