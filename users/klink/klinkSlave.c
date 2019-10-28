@@ -1,3 +1,25 @@
+
+/*
+Copyright (c) 2019, All rights reserved.
+
+File         : klinkSlave.c
+Status       : Current
+Description  : 
+
+Author       : haopeng
+Contact      : 376915244@qq.com
+
+Revision     : 2019-10 
+Description  : Primary released
+
+## Please log your description here for your modication ##
+
+Revision     : 
+Modifier     : 
+Description  : 
+
+*/
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -80,6 +102,31 @@ unsigned int upSecond(void)
 	return ts.tv_sec;
 }
 
+#define zeroIp(ip) ((ip)->s_addr == 0)
+
+int validHostIp(struct in_addr *ip)
+{
+    int fa;
+    fa = ip ? (ntohl(ip->s_addr) >> 24) & 0xff : 0;
+
+    if ((fa > 223) || (fa == 0) || (fa == 127))
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+int validIpAddr(struct in_addr *ip)
+{
+    if (!zeroIp(ip) && !validHostIp(ip))
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
 int getGetwayIp(char gatewayIp[])
 {
 	FILE *fp=NULL;
@@ -133,27 +180,6 @@ int _slave parseMasterConf(int fd, cJSON *jason_obj)
 		
 }
 
-void _slave parseMessageFromMaster(int sd, char* masterMessage) 
-{
-
-    cJSON *json=NULL;
-	cJSON *jason_obj=NULL; 
-
-    json = cJSON_Parse(masterMessage);
-    if (!json)
-    {
-        printf("Error before: [%s]\n", cJSON_GetErrorPtr());
-    }
-    else
-    {
-      /*{"slaveVersion":[{"slaveSoftVer":"WM V1.0.5","slaveMac":"00:11:22:33:44:55"}]}*/
-     if(jason_obj = cJSON_GetObjectItem(json,"slaveVersion"))		
-	 {
-      //parseSlaveVersionConf(sd, jason_obj);
-	 }
-    
-    }
-}
 
 int getMacAddr( char *interface, void *pAddr )
 {
@@ -213,23 +239,64 @@ void _slave sendFwVersionMessageToMaster(int sd)
     cJSON *topRoot=NULL;
 	cJSON *root=NULL;
 	cJSON *parameters=NULL;
+	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 
     getSlaveVersionInfo(fwVersion, macAddr);	  
 	topRoot = cJSON_CreateObject();
-	cJSON_AddItemToObject(topRoot, "slaveVersion", root = cJSON_CreateArray());
-	cJSON_AddItemToArray(root, parameters = cJSON_CreateObject());
-	cJSON_AddStringToObject(parameters, "slaveSoftVer", fwVersion);
-	cJSON_AddStringToObject(parameters, "slaveMac", macAddr);
+	cJSON_AddStringToObject(topRoot, "messageType", "1");//1==KLINK_SLAVE_SEND_VERSION_INFO
+	cJSON_AddItemToObject(topRoot, "slaveVersion", root = cJSON_CreateObject());
+	cJSON_AddStringToObject(root, "slaveSoftVer", fwVersion);
+	cJSON_AddStringToObject(root, "slaveMac", macAddr);
 	stringMessage = cJSON_Print(topRoot);  
 	printf("%s_%d:sen message=%s \n",__FUNCTION__,__LINE__,stringMessage);
 	send(sd, stringMessage,strlen(stringMessage), 0) ;
 	cJSON_Delete(topRoot);	
 }
 
+int _slave klinkSlaveStateMaching(int sd,int messageType,cJSON *messageBody)
+{
+ switch(messageType)
+ {
+  case KLINK_START:
+     sendFwVersionMessageToMaster(sd); 
+	 break;
+  case KLINK_MASTER_SEND_ACK_VERSION_INFO:
+     printf("=>get mast version ack");
+	 break;
+  default:
+  	 break;
+ }
+}
+
+void _slave parseMessageFromMaster(int sd, char* masterMessage) 
+{
+
+    cJSON *json=NULL;
+	int messageType=-1;
+
+    printf("%s_%d:get master message[%s] \n",__FUNCTION__,__LINE__,masterMessage);
+    json = cJSON_Parse(masterMessage);
+    if (!json)
+    {
+        printf("Error before: [%s]\n", cJSON_GetErrorPtr());
+    }
+    else
+    {
+      /*{"slaveVersion":["messageType":"0"{"slaveSoftVer":"WM V1.0.5","slaveMac":"00:11:22:33:44:55"}]}*/
+     //if(jason_obj = cJSON_GetObjectItem(json,"slaveVersion"))	
+     messageType = atoi(cJSON_GetObjectItem(json,"messageType")->valuestring);	
+	 printf("%s_%d:messageType=%d\n ",__FUNCTION__,__LINE__,messageType);
+	 klinkSlaveStateMaching(sd,messageType,json);
+     
+    }
+}
+
 int main(int argc,char **argv)
 {
 	char ip[16]={0};
+	static int messagetype=0;
 	int routeTableFlag=-1;
+	struct in_addr gwAddr;
     fd_set rset;
     FD_ZERO(&rset);
     int sock = socket(AF_INET,SOCK_STREAM,0);
@@ -242,8 +309,10 @@ int main(int argc,char **argv)
 	if(routeTableFlag!=0)
 	{
 	 printf("%s_%d:get gateway ip fail",__FUNCTION__,__LINE__);
+	 return 0;
 	}
-    printf("=slage get gateway ip=%s\n", ip );
+	
+    printf("=slave gateway ip=%s\n", ip );
 	server_addr.sin_addr.s_addr = inet_addr(ip);  
     server_addr.sin_port = htons(KLINK_PORT);
     if(connect(sock,(struct sockaddr*)&server_addr, sizeof(struct sockaddr_in)) < 0)
@@ -264,8 +333,8 @@ int main(int argc,char **argv)
     {
       maxfd = sock; 
     }
-    char sendbuf[1024*4] = {0};  
-    char recvbuf[1024*4] = {0};  
+    char sendbuf[1024] = {0};  
+    char recvbuf[1024] = {0};  
 	apmib_init();
 	
 	g_lastCheckTIme = upSecond();
@@ -294,7 +363,8 @@ int main(int argc,char **argv)
            // writen(fd_stdout, recvbuf, ret);
            printf("---get info from maser:%s \n",recvbuf);
 		   //send(sock, "hello", sizeof("hello"), 0) ;
-		   sendFwVersionMessageToMaster(sock);
+		   
+		   parseMessageFromMaster(sock, (char*)recvbuf);
            memset(recvbuf, 0, sizeof(recvbuf));  
         }  
 	  g_lastCheckTIme = upSecond();

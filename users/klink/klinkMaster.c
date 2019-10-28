@@ -1,3 +1,24 @@
+/*
+Copyright (c) 2019, All rights reserved.
+
+File         : klinkMaster.c
+Status       : Current
+Description  : 
+
+Author       : haopeng
+Contact      : 376915244@qq.com
+
+Revision     : 2019-10 
+Description  : Primary released
+
+## Please log your description here for your modication ##
+
+Revision     : 
+Modifier     : 
+Description  : 
+
+*/
+
 #include <stdio.h>
 #include <string.h>   //strlen
 #include <stdlib.h>
@@ -11,44 +32,79 @@
 #include <time.h>
 #include "cJSON.h"
 #include "klink.h"
+#include "apmib.h"
 
   
 #define TRUE   1
 #define FALSE  0
 
-int parseSlaveVersionConf(int fd, cJSON *jason_obj)
+int parseSlaveVersionConf(int fd, cJSON *messageBody)
 {
-   cJSON *tasklist=jason_obj->child;
-   while(tasklist!=NULL)
+   cJSON *jasonObj=NULL;
+   char *pMessageBody=NULL;
+   char *pSlaveFwVersion=NULL;
+   char *pSlaveMac=NULL;
+   char tmpBuf[128]={0};
+
+   char *pResponseMsg=NULL;
+   cJSON *responseJSON=NULL;
+   	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+   if(jasonObj = cJSON_GetObjectItem(messageBody,"slaveVersion"))
    {
-    cJSON_GetObjectItem(tasklist,"slaveSoftVer")->valuestring;
-    cJSON_GetObjectItem(tasklist,"slaveMac")->valuestring;
-    tasklist=tasklist->next;
+    pSlaveFwVersion=cJSON_GetObjectItem(jasonObj,"slaveSoftVer")->valuestring;
+    pSlaveMac=cJSON_GetObjectItem(jasonObj,"slaveMac")->valuestring;
    }
-		
+    sprintf(tmpBuf,"%s;%s",pSlaveMac,pSlaveFwVersion);
+      	printf("%s_%d:tmpBuf=%s\n ",__FUNCTION__,__LINE__,tmpBuf);
+	apmib_set(MIB_KLINK_SLAVE1_SOFT_VERSION, (void *)tmpBuf);
+	memset(tmpBuf, 0, sizeof(tmpBuf));
+	apmib_get(MIB_KLINK_SLAVE1_SOFT_VERSION, (void *)tmpBuf);
+	printf("%s_%d:set slave version data [%s] ok \n",__FUNCTION__,__LINE__,tmpBuf);
+
+    /*rend ack message to slave*/
+	responseJSON = cJSON_CreateObject();
+	cJSON_AddStringToObject(responseJSON, "messageType", "2"); //2==KLINK_MASTER_SEND_ACK_VERSION_INFO
+//	cJSON_AddNumberToObject(responseJSON, "responseCode", fwVersion);
+	pResponseMsg = cJSON_Print(responseJSON); 
+	printf("%s_%d:send version ack data [%s]  \n",__FUNCTION__,__LINE__,pResponseMsg);
+
+	send(fd , pResponseMsg, strlen(pResponseMsg) , 0 );
+}
+
+int klinkMasterStateMaching(int sd,int messageType,cJSON *messageBody)
+{
+ switch(messageType)
+ {
+  case KLINK_SLAVE_SEND_VERSION_INFO:
+     parseSlaveVersionConf(sd,messageBody);
+	 break;
+  default:
+  	 break;
+ }
 }
 
 void parseMessageFromSlave(int sd, char* slaveMessage) 
 {
 
-    cJSON *json=NULL;
-	cJSON *jason_obj=NULL; 
+    cJSON *pJson=NULL;
+	int messageType=-1;
 
-    json = cJSON_Parse(slaveMessage);
-    if (!json)
+    printf("%s_%d:=>get slave message[%s]\n ",__FUNCTION__,__LINE__,slaveMessage);
+    pJson = cJSON_Parse(slaveMessage);
+    if (!pJson)
     {
         printf("Error before: [%s]\n", cJSON_GetErrorPtr());
     }
     else
     {
-      /*{"slaveVersion":[{"slaveSoftVer":"WM V1.0.5","slaveMac":"00:11:22:33:44:55"}]}*/
-     if(jason_obj = cJSON_GetObjectItem(json,"slaveVersion"))		
-	 {
-      parseSlaveVersionConf(sd, jason_obj);
-	 }
-    
+      /*{"slaveVersion":["messageType":"0"{"slaveSoftVer":"WM V1.0.5","slaveMac":"00:11:22:33:44:55"}]}*/
+     //if(jason_obj = cJSON_GetObjectItem(json,"slaveVersion"))	
+    messageType = atoi(cJSON_GetObjectItem(pJson,"messageType")->valuestring);	
+	klinkMasterStateMaching(sd,messageType,pJson);
+	printf("%s_%d:messageType=%d\n ",__FUNCTION__,__LINE__,messageType);
     }
 }
+
 
 
 int main(int argc , char *argv[])
@@ -64,7 +120,7 @@ int main(int argc , char *argv[])
     fd_set readfds;
       
     //a message
-    char *message = "klink master start... \r\n";
+    char *message = "{\"messageType\":\"0\"}";
   
     //initialise all client_socket[] to 0 so not checked
     for (i = 0; i < max_clients; i++) 
@@ -202,7 +258,8 @@ int main(int argc , char *argv[])
                     //set the string terminating NULL byte on the end of the data read
                     buffer[valread] = '\0';
 					printf("++++get info from slave :%s\n",buffer);
-                    send(sd , buffer , strlen(buffer) , 0 );
+                   // send(sd , buffer , strlen(buffer) , 0 );
+                   parseMessageFromSlave(sd, (char*)buffer);
                 }
             }
         }
