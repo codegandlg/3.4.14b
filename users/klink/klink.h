@@ -35,6 +35,7 @@ Description  :
 #define TRUE                       1
 #define KLINK_PORT                 5001
 #define MAX_CLIENT                 400
+#define WAN_IF                     "eth1"
 
 
 

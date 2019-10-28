@@ -8,13 +8,49 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
+#include <time.h>
+#include "cJSON.h"
 #include "klink.h"
 
   
 #define TRUE   1
 #define FALSE  0
 
- 
+int parseSlaveVersionConf(int fd, cJSON *jason_obj)
+{
+   cJSON *tasklist=jason_obj->child;
+   while(tasklist!=NULL)
+   {
+    cJSON_GetObjectItem(tasklist,"slaveSoftVer")->valuestring;
+    cJSON_GetObjectItem(tasklist,"slaveMac")->valuestring;
+    tasklist=tasklist->next;
+   }
+		
+}
+
+void parseMessageFromSlave(int sd, char* slaveMessage) 
+{
+
+    cJSON *json=NULL;
+	cJSON *jason_obj=NULL; 
+
+    json = cJSON_Parse(slaveMessage);
+    if (!json)
+    {
+        printf("Error before: [%s]\n", cJSON_GetErrorPtr());
+    }
+    else
+    {
+      /*{"slaveVersion":[{"slaveSoftVer":"WM V1.0.5","slaveMac":"00:11:22:33:44:55"}]}*/
+     if(jason_obj = cJSON_GetObjectItem(json,"slaveVersion"))		
+	 {
+      parseSlaveVersionConf(sd, jason_obj);
+	 }
+    
+    }
+}
+
+
 int main(int argc , char *argv[])
 {
     int opt = TRUE;
@@ -74,6 +110,7 @@ int main(int argc , char *argv[])
     addrlen = sizeof(address);
     puts("klink master waiting for connections ...");
     apmib_init(); 
+
     while(TRUE) 
     {
         //clear the socket set

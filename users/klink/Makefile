@@ -26,17 +26,21 @@ TARGET = klinkM klinkS
 all: $(TARGET)
 
 
-klinkM: klinkMaster.o
-	$(CC) klinkMaster.o $(LDFLAGS) $(COMMON_CFLAGS) -L$(APMIB_DIR) -lapmib  -o klinkM
+klinkM: klinkMaster.o cJSON.o
+	$(CC) klinkMaster.o cJSON.o $(LDFLAGS) $(COMMON_CFLAGS) -L$(APMIB_DIR) -lapmib  -o klinkM -lm
 
-klinkS: klinkSlave.o 
-	$(CC) klinkSlave.o $(LDFLAGS) $(COMMON_CFLAGS) -L$(APMIB_DIR) -lapmib  -o klinkS
+klinkS: klinkSlave.o cJSON.o
+	$(CC) klinkSlave.o cJSON.o $(LDFLAGS) $(COMMON_CFLAGS) -L$(APMIB_DIR) -lapmib  -o klinkS -lm
+
+cJSON.o:cJSON.c
+	$(CC) -c cJSON.c -o cJSON.o -lm 
 
 klinkSlave.o:klinkSlave.c
 	$(CC) -c klinkSlave.c -o klinkSlave.o
 
 klinkMaster.o:klinkMaster.c
 	$(CC) -c klinkMaster.c -o klinkMaster.o
+
 	
 romfs:
 	$(ROMFSINST) $(KLINK_DIR)/klinkM /bin/

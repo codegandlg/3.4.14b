@@ -10,7 +10,23 @@
 #include <signal.h>
 #include <time.h>
 #include <stdarg.h>
+#include<net/if_arp.h>
+#include<arpa/inet.h>
+#include<sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/route.h>
+#include <net/if.h>
+
+#include<errno.h>
 #include "klink.h"
+#include <time.h>
+#include "cJSON.h"
+
+#define _slave 
+
+unsigned int g_lastCheckTIme = 0;
+
+
 #define ERR_EXIT(m, ...)\
     do{\
         fprintf(stderr, m"\n", ##__VA_ARGS__);\
@@ -57,6 +73,13 @@ writen(int fd, const void *vptr, size_t n){
     return(n);
 }
 
+unsigned int upSecond(void)
+{
+	struct timespec ts;
+	clock_gettime(CLOCK_MONOTONIC, &ts);	
+	return ts.tv_sec;
+}
+
 int getGetwayIp(char gatewayIp[])
 {
 	FILE *fp=NULL;
@@ -98,6 +121,111 @@ int getGetwayIp(char gatewayIp[])
 		
 }
 
+int _slave parseMasterConf(int fd, cJSON *jason_obj)
+{
+   cJSON *tasklist=jason_obj->child;
+   while(tasklist!=NULL)
+   {
+    cJSON_GetObjectItem(tasklist,"slaveSoftVer")->valuestring;
+    cJSON_GetObjectItem(tasklist,"slaveMac")->valuestring;
+    tasklist=tasklist->next;
+   }
+		
+}
+
+void _slave parseMessageFromMaster(int sd, char* masterMessage) 
+{
+
+    cJSON *json=NULL;
+	cJSON *jason_obj=NULL; 
+
+    json = cJSON_Parse(masterMessage);
+    if (!json)
+    {
+        printf("Error before: [%s]\n", cJSON_GetErrorPtr());
+    }
+    else
+    {
+      /*{"slaveVersion":[{"slaveSoftVer":"WM V1.0.5","slaveMac":"00:11:22:33:44:55"}]}*/
+     if(jason_obj = cJSON_GetObjectItem(json,"slaveVersion"))		
+	 {
+      //parseSlaveVersionConf(sd, jason_obj);
+	 }
+    
+    }
+}
+
+int getMacAddr( char *interface, void *pAddr )
+{
+    struct ifreq ifr;
+    int skfd, found=0;
+	struct sockaddr_in *addr;
+    skfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    strcpy(ifr.ifr_name, interface);
+    if (ioctl(skfd, SIOCGIFFLAGS, &ifr) < 0){
+    		close( skfd );
+		return (0);
+	}
+    if (ioctl(skfd, SIOCGIFHWADDR, &ifr) >= 0) {
+		memcpy(pAddr, &ifr.ifr_hwaddr, sizeof(struct sockaddr));
+		found = 1;
+	}
+    else {    	
+    	if (ioctl(skfd, SIOCGIFDSTADDR, &ifr) >= 0) {
+		addr = ((struct sockaddr_in *)&ifr.ifr_addr);
+		*((struct in_addr *)pAddr) = *((struct in_addr *)&addr->sin_addr);
+		found = 1;
+	}
+    	
+    }
+    close( skfd );
+    return found;
+}
+
+int _slave getSlaveVersionInfo(char *pSoftVersion, char *pWanHWAddr)
+{
+ 	struct sockaddr hwaddr;
+	unsigned char *pMacAddr;
+	if ( getMacAddr(WAN_IF, (void *)&hwaddr ) ) 
+	{
+		pMacAddr = (unsigned char *)hwaddr.sa_data;
+		sprintf(pWanHWAddr,"%02x:%02x:%02x:%02x:%02x:%02x",pMacAddr[0], pMacAddr[1],pMacAddr[2], pMacAddr[3], pMacAddr[4], pMacAddr[5]);
+	}
+	else
+	{
+		sprintf(pWanHWAddr,"%s","00:00:00:00:00:00");
+	}
+	strcpy(pSoftVersion,"WM V1.0.6");
+}
+
+
+/*
+ * version formate:
+* {"slaveVersion":[{"slaveSoftVer":"WM V1.0.5","slaveMac":"00:11:22:33:44:55"}]}
+*/
+
+void _slave sendFwVersionMessageToMaster(int sd) 
+{
+	char macAddr[18]={0};
+	char fwVersion[18]={0};	
+	char* stringMessage=NULL;
+    cJSON *topRoot=NULL;
+	cJSON *root=NULL;
+	cJSON *parameters=NULL;
+
+    getSlaveVersionInfo(fwVersion, macAddr);	  
+	topRoot = cJSON_CreateObject();
+	cJSON_AddItemToObject(topRoot, "slaveVersion", root = cJSON_CreateArray());
+	cJSON_AddItemToArray(root, parameters = cJSON_CreateObject());
+	cJSON_AddStringToObject(parameters, "slaveSoftVer", fwVersion);
+	cJSON_AddStringToObject(parameters, "slaveMac", macAddr);
+	stringMessage = cJSON_Print(topRoot);  
+	printf("%s_%d:sen message=%s \n",__FUNCTION__,__LINE__,stringMessage);
+	send(sd, stringMessage,strlen(stringMessage), 0) ;
+	cJSON_Delete(topRoot);	
+}
+
 int main(int argc,char **argv)
 {
 	char ip[16]={0};
@@ -124,7 +252,7 @@ int main(int argc,char **argv)
     }
     fprintf(stdout, "% 9d\n", getpid());
     fflush(stdout);
-    int nready;  
+    int ready;  
     int maxfd;  
     int fd_stdin = fileno(stdin);
     int fd_stdout = fileno(stdout);
@@ -139,14 +267,19 @@ int main(int argc,char **argv)
     char sendbuf[1024*4] = {0};  
     char recvbuf[1024*4] = {0};  
 	apmib_init();
+	
+	g_lastCheckTIme = upSecond();
     while (1)
 	{  
+	 if(upSecond() - g_lastCheckTIme > 5)
+	 {
         FD_SET(fd_stdin, &rset);  
         FD_SET(sock, &rset);  
 	   /*select return value:there is something readble message */
-        nready = select(maxfd + 1, &rset, NULL, NULL, NULL); 
-        if (nready == -1) ERR_EXIT("select error");  
-        if (nready == 0) continue;  
+        ready = select(maxfd + 1, &rset, NULL, NULL, NULL); 
+        if (ready == -1) ERR_EXIT("select error");  
+        if (ready == 0) 
+			continue;  
         if (FD_ISSET(sock, &rset))
 		{  
             int ret = read(sock, recvbuf, sizeof(recvbuf)); 
@@ -160,9 +293,13 @@ int main(int argc,char **argv)
             }
            // writen(fd_stdout, recvbuf, ret);
            printf("---get info from maser:%s \n",recvbuf);
-		   send(sock, "hello", sizeof("hello"), 0) ;
+		   //send(sock, "hello", sizeof("hello"), 0) ;
+		   sendFwVersionMessageToMaster(sock);
            memset(recvbuf, 0, sizeof(recvbuf));  
         }  
+	  g_lastCheckTIme = upSecond();
+	}
+	sleep(1);
 #if 0
 		strcpy(sendbuf,"hello");
         if (FD_ISSET(fd_stdin, &rset))
