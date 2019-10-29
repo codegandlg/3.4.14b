@@ -41,6 +41,7 @@ Description  :
 #define KLINK_PORT                 5001
 #define MAX_CLIENT                 400
 #define WAN_IF                     "eth1"
+#define MAX_SLAVE_NUM              15
 
 #define NONE_CON_REQ             0
 #define IDENTITY_CHECK           1
@@ -61,6 +62,47 @@ enum MESSAGE_STATE_TYPE
   
 };
 
+
+struct klinkNode 
+{ 
+ int noteNum;
+ char slaveMac[17];
+ char slaveFwVersion[12];
+ int data; 
+struct Node *next; 
+}; 
+
+/*
+ type 0: match any of belows
+ type 1: match 001122334455
+ type 2: match 00:11:22:33:44:55
+ type 3: match 00-11-22-33-44-55
+ type 4: match 0011:2233:4455
+ type 5: match 0011-2233-4455
+ type 6: match 001122:334455
+ type 7: match 001122-334455
+*/
+
+enum{
+    ETHER_TYPE_DEFAULT = 0,
+    ETHER_TYPE_NO_SEPARTOR,
+    ETHER_TYPE_ONE_COLON,
+    ETHER_TYPE_ONE_DASH, 
+    ETHER_TYPE_TWO_COLON,
+    ETHER_TYPE_TWO_DASH, 
+    ETHER_TYPE_FIVE_COLON,
+    ETHER_TYPE_FIVE_DASH    
+};
+#define ETHER_ADDR_TYPE_DEFAULT  ETHER_TYPE_ONE_DASH 
+
+#ifndef ETHER_ADDR_LEN
+#define ETHER_ADDR_LEN 6
+#endif 
+
+typedef struct etherAddr 
+{
+    unsigned char octet[ETHER_ADDR_LEN];
+}etherAddr_t;
 
 /*use for listen() func*/
 #define PENDING_CONNECTION_NUM     3   

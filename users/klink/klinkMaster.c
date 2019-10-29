@@ -37,6 +37,141 @@ Description  :
   
 #define TRUE   1
 #define FALSE  0
+extern char *etherAddrToString(etherAddr_t *ether, int type);
+//=====================================================================
+#if 0
+struct klinkNode g_klinkLinkList;
+
+/* 
+ *  prints datas of linked list 
+*/
+void printList(struct klinkNode *n) 
+{ 
+while (n != NULL) 
+{ 
+	printf(" %d ", n->data); 
+	n = n->next; 
+} 
+} 
+
+/*destroy klink list*/
+int destroyList(struct klinkNode *head)  
+{  
+    struct klinkNode *p;  
+    if(head==NULL)  
+        return 0;  
+    while(head)  
+    {  
+        p=head->next;  
+        free(head);  
+        head=p;  
+    }  
+    return 1;  
+}  
+  
+/*clear klink list*/ 
+int clearList(struct klinkNode *head)  
+{  
+    struct klinkNode *p,*q;  
+    if(head==NULL)  
+        return 0;  
+    p=head->next;  
+    while(p!=NULL)  
+    {  
+        q=p->next;  
+        free(p);  
+        p=q;  
+    }  
+    head->next=NULL;  
+    return 1;  
+} 
+
+
+int getSlaveVersion(struct Node* pKlinkLlink) 
+{ 
+   struct klinkNode* pKlinkLlink=g_klinkLinkList;
+}
+
+/*update version info if the data already exist in link node */
+int updateExistKlinkVersionData(struct klinkNode *head,char slaveMac[],char slaveFwVersion[] )
+{
+  int ret=-1;
+  int i=1;
+  struct klinkNode* pKlinkNodeHead=g_klinkLinkList;
+  while(pKlinkNodeHead &&(i<MAX_SLAVE_NUM))
+  {
+   if(!(strcmp(pKlinkNodeHead->slaveMac,slaveMac)))
+   {
+    memset(pKlinkNodeHead->slaveFwVersion,0,strlen(slaveFwVersion));
+	return 1;//updated data which already exist 
+   }
+   pKlinkNodeHead=pKlinkNodeHead->next;
+   i++;
+  } 
+  strcpy(pKlinkNodeHead->slaveFwVersion,slaveFwVersion);
+  return 0;//not exist
+}
+
+void addKlinkListData(struct klinkNode *head,char slaveMac[], char slaveFwVersion[])
+{
+ int ret=-1;
+ struct klinkNode* pKlinkNodeHead=g_klinkLinkList;
+ struct klinkNode* pKlinkNewNode=NULL;
+
+  ret=updateExistKlinkVersionData(pKlinkNodeHead,slaveMac,slaveFwVersion);
+  while(pKlinkNodeHead,)
+  {
+   pKlinkNodeHead=pKlinkNodeHead->next;
+  }
+  
+  /*create new node and add data to node*/
+  pKlinkNewNode = (struct klinkNode*)malloc(sizeof(struct klinkNode)); 
+  if(pKlinkNewNode==NULL)
+  { 
+   printf("malloc error exit");
+   return ;
+  }
+  strcpy(pKlinkNewNode->slaveMac,slaveMac);
+  strcpy(pKlinkNewNode->slaveFwVersion,slaveFwVersion);
+
+
+  
+  strncpy();
+  second = (struct Node*)malloc(sizeof(struct klinkNode)); 
+  third = (struct Node*)malloc(sizeof(struct klinkNode)); 
+
+  head->data = 1; 
+  head->next = second; 
+
+  second->data = 2; 
+  second->next = third; 
+
+  third->data = 3; 
+  third->next = NULL; 
+	
+  printList(head);	
+
+
+  
+// allocate 3 nodes in the heap 
+  head = (struct Node*)malloc(sizeof(struct Node)); 
+  second = (struct Node*)malloc(sizeof(struct Node)); 
+  third = (struct Node*)malloc(sizeof(struct Node)); 
+
+  head->data = 1; 
+  head->next = second; 
+
+  second->data = 2; //assign data to second node 
+  second->next = third; 
+
+  third->data = 3; //assign data to third node 
+  third->next = NULL; 
+	
+  printList(head); 
+
+  return 0; 
+}
+#endif
 
 int parseSlaveVersionConf(int fd, cJSON *messageBody)
 {

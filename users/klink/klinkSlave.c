@@ -209,14 +209,106 @@ int getMacAddr( char *interface, void *pAddr )
     return found;
 }
 
+char *etherAddrToString(etherAddr_t *ether, int type)
+{
+    static char buffer[8][64];
+    static int buffer_index = 0;
+
+    if (buffer_index >= sizeof(buffer)/sizeof(buffer[0]) - 1)
+    {
+        buffer_index = 0;
+    }
+    else 
+    {
+        buffer_index ++;
+    }
+
+    if (type == ETHER_TYPE_DEFAULT)
+    {
+        type = ETHER_ADDR_TYPE_DEFAULT;
+    }
+    
+    switch(type)
+    {
+        case ETHER_TYPE_NO_SEPARTOR:
+            sprintf(buffer[buffer_index], "%02x%02x%02x%02x%02x%02x", 
+                ether->octet[0], ether->octet[1], ether->octet[2],
+                ether->octet[3], ether->octet[4], ether->octet[5]);
+            break;
+        case ETHER_TYPE_ONE_COLON:
+            sprintf(buffer[buffer_index], "%02x%02x%02x:%02x%02x%02x", 
+                ether->octet[0], ether->octet[1], ether->octet[2],
+                ether->octet[3], ether->octet[4], ether->octet[5]);  
+            break;
+        case ETHER_TYPE_ONE_DASH:
+            sprintf(buffer[buffer_index], "%02x%02x%02x-%02x%02x%02x", 
+                ether->octet[0], ether->octet[1], ether->octet[2],
+                ether->octet[3], ether->octet[4], ether->octet[5]);  
+            break;            
+        case ETHER_TYPE_TWO_COLON:
+            sprintf(buffer[buffer_index], "%02x%02x:%02x%02x:%02x%02x", 
+                ether->octet[0], ether->octet[1], ether->octet[2],
+                ether->octet[3], ether->octet[4], ether->octet[5]);  
+            break;            
+        case ETHER_TYPE_TWO_DASH:
+            sprintf(buffer[buffer_index], "%02x%02x-%02x%02x-%02x%02x", 
+                ether->octet[0], ether->octet[1], ether->octet[2],
+                ether->octet[3], ether->octet[4], ether->octet[5]);  
+            break;            
+        case ETHER_TYPE_FIVE_COLON:
+            sprintf(buffer[buffer_index], "%02x:%02x:%02x:%02x:%02x:%02x", 
+                ether->octet[0], ether->octet[1], ether->octet[2],
+                ether->octet[3], ether->octet[4], ether->octet[5]);  
+            break;            
+        case ETHER_TYPE_FIVE_DASH:
+            sprintf(buffer[buffer_index], "%02x%02x%02x%02x%02x%02x", 
+                ether->octet[0], ether->octet[1], ether->octet[2],
+                ether->octet[3], ether->octet[4], ether->octet[5]);  
+            break;
+        default:
+            sprintf(buffer[buffer_index], "%02x%02x%02x%02x%02x%02x", 
+                ether->octet[0], ether->octet[1], ether->octet[2],
+                ether->octet[3], ether->octet[4], ether->octet[5]);  
+            break;            
+    }
+    
+    return buffer[buffer_index];
+}
+
+int getNetifHwAddr(const char *ifname, etherAddr_t *hwaddr)
+{
+	int sock, ret;
+	struct ifreq ifr;
+
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if(sock < 0) 
+    {   
+        return -1;
+    }
+
+	memset(&ifr, 0, sizeof(struct ifreq));
+	strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name) - 1);
+    
+	ret = ioctl(sock, SIOCGIFHWADDR, &ifr);
+
+	if(!ret && hwaddr)
+    {
+        memcpy(hwaddr, ifr.ifr_hwaddr.sa_data, sizeof(etherAddr_t));
+    }
+
+	close(sock);
+    
+	return (ret < 0) ? -1 : 0;
+}
+
 int _slave getSlaveVersionInfo(char *pSoftVersion, char *pWanHWAddr)
 {
  	struct sockaddr hwaddr;
+	etherAddr_t addr;
 	unsigned char *pMacAddr;
-	if ( getMacAddr(WAN_IF, (void *)&hwaddr ) ) 
+	if (!(getNetifHwAddr("eth1", &addr)) ) 
 	{
-		pMacAddr = (unsigned char *)hwaddr.sa_data;
-		sprintf(pWanHWAddr,"%02x:%02x:%02x:%02x:%02x:%02x",pMacAddr[0], pMacAddr[1],pMacAddr[2], pMacAddr[3], pMacAddr[4], pMacAddr[5]);
+	 sprintf(pWanHWAddr, "%s",etherAddrToString(&addr, ETHER_TYPE_NO_SEPARTOR));
 	}
 	else
 	{
