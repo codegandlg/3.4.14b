@@ -35,42 +35,48 @@ Description  :
 #define NULL ((void *)0)
 #endif
 
-
 #define FALSE                      0
 #define TRUE                       1
+#define RETURN_SUCC                0
+#define RETURN_FAIL                1
 #define KLINK_PORT                 5001
 #define MAX_CLIENT                 400
 #define WAN_IF                     "eth1"
 #define MAX_SLAVE_NUM              15
+#define ENUM_DEFAULT              0
 
-#define NONE_CON_REQ             0
-#define IDENTITY_CHECK           1
-#define INT_CON_REQ              2
-#define WLAN_BASIC_CON_REQ       3
-#define WLAN_ENCRYP_CON_REQ      4
-#define WLAN_SIMPLE_CON_REQ      5
-#define FIREWLL_CON_REQ          6
-#define SYS_TOOL_CON_REQ         7
-#define CONFIGURE_ROUTER_EVENT   8
-#define CLIENT_LIST_CON_REQ      9
-enum MESSAGE_STATE_TYPE
+typedef enum  
 {
-  DEFAULT=0,
-  KLINK_START=DEFAULT,
-  KLINK_SLAVE_SEND_VERSION_INFO,
-  KLINK_MASTER_SEND_ACK_VERSION_INFO,
-  
-};
+  KLINK_START=ENUM_DEFAULT,
+  KLINK_SLAVE_SEND_VERSION_INFO,    
+  KLINK_MASTER_SEND_ACK_VERSION_INFO,    
+}klinkMsgStateMachine_t;  
+
+typedef enum 
+{
+  KLINK_CREATE_TOPOLOGY_LINK_LIST=ENUM_DEFAULT,
+  KLINK_SLAVE_SOFT_VERSION,
+}klinkDataType_t;
+
+/*klink slave version information */
+typedef struct KlinkSlaveVersion
+{
+	char slaveSoftVer[18];
+	char slaveMac[18];
+}KlinkSlaveVersion_t;
 
 
-struct klinkNode 
-{ 
- int noteNum;
- char slaveMac[17];
- char slaveFwVersion[12];
- int data; 
-struct Node *next; 
-}; 
+/*klink node struct*/
+typedef struct KlinkNode
+{
+    int date;
+    int slaveMeshNum;
+	KlinkSlaveVersion_t slaveVersionInfo;
+	klinkDataType_t dataType;
+	klinkMsgStateMachine_t stateMachine;
+	struct KlinkNode *next;
+}KlinkNode_t;
+
 
 /*
  type 0: match any of belows

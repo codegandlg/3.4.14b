@@ -34,145 +34,108 @@ Description  :
 #include "klink.h"
 #include "apmib.h"
 
-  
-#define TRUE   1
-#define FALSE  0
 extern char *etherAddrToString(etherAddr_t *ether, int type);
-//=====================================================================
-#if 0
-struct klinkNode g_klinkLinkList;
-
-/* 
- *  prints datas of linked list 
-*/
-void printList(struct klinkNode *n) 
-{ 
-while (n != NULL) 
-{ 
-	printf(" %d ", n->data); 
-	n = n->next; 
-} 
-} 
-
-/*destroy klink list*/
-int destroyList(struct klinkNode *head)  
-{  
-    struct klinkNode *p;  
-    if(head==NULL)  
-        return 0;  
-    while(head)  
-    {  
-        p=head->next;  
-        free(head);  
-        head=p;  
-    }  
-    return 1;  
-}  
-  
-/*clear klink list*/ 
-int clearList(struct klinkNode *head)  
-{  
-    struct klinkNode *p,*q;  
-    if(head==NULL)  
-        return 0;  
-    p=head->next;  
-    while(p!=NULL)  
-    {  
-        q=p->next;  
-        free(p);  
-        p=q;  
-    }  
-    head->next=NULL;  
-    return 1;  
-} 
+extern KlinkNode_t* initKlinkListHead();
+extern KlinkNode_t *addKlinkListNode(KlinkNode_t*head,char* date,int type);
+extern KlinkNode_t* serchKlinkListNode(KlinkNode_t*head,char*  date);
+extern KlinkNode_t* deletKlinkListNode(KlinkNode_t*head,char* date);
+extern void showKlinkNode(KlinkNode_t*head);
+KlinkNode_t* g_pKlinkHead = NULL;
 
 
-int getSlaveVersion(struct Node* pKlinkLlink) 
-{ 
-   struct klinkNode* pKlinkLlink=g_klinkLinkList;
-}
-
-/*update version info if the data already exist in link node */
-int updateExistKlinkVersionData(struct klinkNode *head,char slaveMac[],char slaveFwVersion[] )
+KlinkNode_t* createMeshTopologyLinkList(cJSON *root)
 {
-  int ret=-1;
-  int i=1;
-  struct klinkNode* pKlinkNodeHead=g_klinkLinkList;
-  while(pKlinkNodeHead &&(i<MAX_SLAVE_NUM))
-  {
-   if(!(strcmp(pKlinkNodeHead->slaveMac,slaveMac)))
+  cJSON *head;
+  cJSON *pos;
+  cJSON *parameters;
+  int slaveNum=0;
+  KlinkNode_t* pKlink=NULL; g_pKlinkHead;
+  KlinkNode_t* pKlinkHead=NULL; g_pKlinkHead;
+    	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+  g_pKlinkHead=initKlinkListHead();
+  pKlink=g_pKlinkHead;
+  pKlinkHead=g_pKlinkHead;
+  /*before create mesh device link list ,clear link node first*/
+  clearKlinkList(pKlink);  
+      	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+  head = cJSON_GetObjectItem(root, "child_devices");
+  if(head != NULL)
    {
-    memset(pKlinkNodeHead->slaveFwVersion,0,strlen(slaveFwVersion));
-	return 1;//updated data which already exist 
+   for(pos = head->child; pos != NULL; pos = pos->next)
+   {
+    parameters = cJSON_GetObjectItem(pos, "mac_address");
+    if(parameters != NULL)
+    {
+      slaveNum++;
+	  /*add slave mesh node to link list tail*/
+	  addKlinkListNode(g_pKlinkHead,parameters->valuestring,KLINK_CREATE_TOPOLOGY_LINK_LIST);
+      printf("====>mac[%s]----slaveNum[%d]\n",parameters->valuestring,slaveNum);
+    }
    }
-   pKlinkNodeHead=pKlinkNodeHead->next;
-   i++;
-  } 
-  strcpy(pKlinkNodeHead->slaveFwVersion,slaveFwVersion);
-  return 0;//not exist
-}
-
-void addKlinkListData(struct klinkNode *head,char slaveMac[], char slaveFwVersion[])
-{
- int ret=-1;
- struct klinkNode* pKlinkNodeHead=g_klinkLinkList;
- struct klinkNode* pKlinkNewNode=NULL;
-
-  ret=updateExistKlinkVersionData(pKlinkNodeHead,slaveMac,slaveFwVersion);
-  while(pKlinkNodeHead,)
+  }
+  else
   {
-   pKlinkNodeHead=pKlinkNodeHead->next;
+     printf("%s:%d： can't find child_devices.", __FUNCTION__, __LINE__);
   }
-  
-  /*create new node and add data to node*/
-  pKlinkNewNode = (struct klinkNode*)malloc(sizeof(struct klinkNode)); 
-  if(pKlinkNewNode==NULL)
-  { 
-   printf("malloc error exit");
-   return ;
-  }
-  strcpy(pKlinkNewNode->slaveMac,slaveMac);
-  strcpy(pKlinkNewNode->slaveFwVersion,slaveFwVersion);
-
-
-  
-  strncpy();
-  second = (struct Node*)malloc(sizeof(struct klinkNode)); 
-  third = (struct Node*)malloc(sizeof(struct klinkNode)); 
-
-  head->data = 1; 
-  head->next = second; 
-
-  second->data = 2; 
-  second->next = third; 
-
-  third->data = 3; 
-  third->next = NULL; 
-	
-  printList(head);	
-
-
-  
-// allocate 3 nodes in the heap 
-  head = (struct Node*)malloc(sizeof(struct Node)); 
-  second = (struct Node*)malloc(sizeof(struct Node)); 
-  third = (struct Node*)malloc(sizeof(struct Node)); 
-
-  head->data = 1; 
-  head->next = second; 
-
-  second->data = 2; //assign data to second node 
-  second->next = third; 
-
-  third->data = 3; //assign data to third node 
-  third->next = NULL; 
-	
-  printList(head); 
-
-  return 0; 
+  pKlinkHead->slaveMeshNum=slaveNum;
+  return pKlinkHead;
 }
-#endif
 
+KlinkNode_t* createMeshDeviceLinkList()
+{
+ printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+ char* out=NULL;
+ cJSON *root=NULL; 
+ FILE *fp=NULL;
+ KlinkNode_t* pKlinkHead=NULL;
+ int read=0;
+ int len  = 0;
+ char*	line  = NULL;   
+  printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+ fp = fopen("/tmp/topology_json", "r");
+   printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+ if(fp == NULL)
+ {
+  printf("==>%s_%d:open /tmp/topology_json fail...",__FUNCTION__,__LINE__);
+  return RETURN_FAIL;
+ }
+ else
+ {
+  printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+  read = getline(&line, &len, fp);
+  fclose(fp);
+  printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+  if(line) 
+  {
+    printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+   root = cJSON_Parse(line);  
+   free(line);    
+   if(root==NULL)
+   {
+    printf("%s_%d: error...\n ",__FUNCTION__,__LINE__);
+   }
+   else
+   {
+    printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+    pKlinkHead=createMeshTopologyLinkList(root);
+   }
+  }
+   else
+   {
+    printf("==>%s_%d: topology_json error ",__FUNCTION__,__LINE__);
+    return RETURN_FAIL;
+   }
+
+ }
+  out = cJSON_Print(root);
+ printf("==>%s_%d:out=[%s] open /tmp/topology_json fail...\n",__FUNCTION__,__LINE__,out);	
+  cJSON_Delete(root);
+  return pKlinkHead;
+}
+
+/*getMeshTopology();*/
+
+//================add end
 int parseSlaveVersionConf(int fd, cJSON *messageBody)
 {
    cJSON *jasonObj=NULL;
@@ -180,21 +143,30 @@ int parseSlaveVersionConf(int fd, cJSON *messageBody)
    char *pSlaveFwVersion=NULL;
    char *pSlaveMac=NULL;
    char tmpBuf[128]={0};
+   KlinkNode_t* pKlinkHead=NULL;
 
    char *pResponseMsg=NULL;
    cJSON *responseJSON=NULL;
-   	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+
    if(jasonObj = cJSON_GetObjectItem(messageBody,"slaveVersion"))
    {
     pSlaveFwVersion=cJSON_GetObjectItem(jasonObj,"slaveSoftVer")->valuestring;
     pSlaveMac=cJSON_GetObjectItem(jasonObj,"slaveMac")->valuestring;
    }
-    sprintf(tmpBuf,"%s;%s",pSlaveMac,pSlaveFwVersion);
+
+   pKlinkHead=createMeshDeviceLinkList();
+     	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+   addKlinkListNode(pKlinkHead,pSlaveFwVersion,KLINK_SLAVE_SOFT_VERSION);
+     	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+   showKlinkNode(pKlinkHead);
+    sprintf(tmpBuf,"%d;%s;%s",pKlinkHead->slaveMeshNum,pSlaveMac,pSlaveFwVersion);
       	printf("%s_%d:tmpBuf=%s\n ",__FUNCTION__,__LINE__,tmpBuf);
 	apmib_set(MIB_KLINK_SLAVE1_SOFT_VERSION, (void *)tmpBuf);
 	memset(tmpBuf, 0, sizeof(tmpBuf));
 	apmib_get(MIB_KLINK_SLAVE1_SOFT_VERSION, (void *)tmpBuf);
 	printf("%s_%d:set slave version data [%s] ok \n",__FUNCTION__,__LINE__,tmpBuf);
+
+	
 
     /*rend ack message to slave*/
 	responseJSON = cJSON_CreateObject();
@@ -216,6 +188,7 @@ int klinkMasterStateMaching(int sd,int messageType,cJSON *messageBody)
   default:
   	 break;
  }
+ return 0;
 }
 
 void parseMessageFromSlave(int sd, char* slaveMessage) 
@@ -241,7 +214,6 @@ void parseMessageFromSlave(int sd, char* slaveMessage)
 }
 
 
-
 int main(int argc , char *argv[])
 {
     int opt = TRUE;
@@ -256,7 +228,7 @@ int main(int argc , char *argv[])
       
     //a message
     char *message = "{\"messageType\":\"0\"}";
-  
+
     //initialise all client_socket[] to 0 so not checked
     for (i = 0; i < max_clients; i++) 
     {
@@ -265,12 +237,13 @@ int main(int argc , char *argv[])
       
     //create a master socket
     if( (master_socket = socket(AF_INET , SOCK_STREAM , 0)) == 0) 
-    {
+    {   
+        close(master_socket);
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
   
-    //set master socket to allow multiple connections , this is just a good habit, it will work without this
+    //set master socket to allow multiple connections 
     if( setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0 )
     {
         perror("setsockopt");
@@ -290,8 +263,8 @@ int main(int argc , char *argv[])
     }
     printf("Listener on port %d \n", KLINK_PORT);
      
-    //try to specify maximum of 3 pending connections for the master socket
-    if (listen(master_socket, 3) < 0)
+    //try to specify maximum of 16 pending connections for the master socket
+    if (listen(master_socket, 16) < 0)
     {
         perror("listen");
         exit(EXIT_FAILURE);
@@ -301,7 +274,9 @@ int main(int argc , char *argv[])
     addrlen = sizeof(address);
     puts("klink master waiting for connections ...");
     apmib_init(); 
+    int slaveNumber=0;
 
+	//g_pKlinkHead=initKlinkListHead();
     while(TRUE) 
     {
         //clear the socket set
@@ -395,6 +370,7 @@ int main(int argc , char *argv[])
 					printf("++++get info from slave :%s\n",buffer);
                    // send(sd , buffer , strlen(buffer) , 0 );
                    parseMessageFromSlave(sd, (char*)buffer);
+
                 }
             }
         }
