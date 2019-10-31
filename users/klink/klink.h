@@ -41,7 +41,7 @@ Description  :
 #define RETURN_FAIL                1
 #define KLINK_PORT                 5001
 #define MAX_CLIENT                 400
-#define WAN_IF                     "eth1"
+#define KLINK_IF               "wlan0"
 #define MAX_SLAVE_NUM              15
 #define ENUM_DEFAULT              0
 
@@ -69,7 +69,6 @@ typedef struct KlinkSlaveVersion
 /*klink node struct*/
 typedef struct KlinkNode
 {
-    int date;
     int slaveMeshNum;
 	KlinkSlaveVersion_t slaveVersionInfo;
 	klinkDataType_t dataType;

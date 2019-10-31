@@ -306,7 +306,7 @@ int _slave getSlaveVersionInfo(char *pSoftVersion, char *pWanHWAddr)
  	struct sockaddr hwaddr;
 	etherAddr_t addr;
 	unsigned char *pMacAddr;
-	if (!(getNetifHwAddr("eth1", &addr)) ) 
+	if (!(getNetifHwAddr(KLINK_IF, &addr)) ) 
 	{
 	 sprintf(pWanHWAddr, "%s",etherAddrToString(&addr, ETHER_TYPE_NO_SEPARTOR));
 	}
@@ -453,7 +453,7 @@ int main(int argc,char **argv)
 			  ERR_EXIT("server close"); 
             }
            // writen(fd_stdout, recvbuf, ret);
-           printf("---get info from maser:%s \n",recvbuf);
+           printf("==>received messagerom maser:\n%s \n",recvbuf);
 		   //send(sock, "hello", sizeof("hello"), 0) ;
 		   
 		   parseMessageFromMaster(sock, (char*)recvbuf);
@@ -463,7 +463,7 @@ int main(int argc,char **argv)
 	}
 	sleep(1);
 #if 0
-		strcpy(sendbuf,"hello");
+		strcpy(sendbuf,"test");
         if (FD_ISSET(fd_stdin, &rset))
 		{  
             int ret = read(fd_stdin, sendbuf, sizeof(sendbuf));

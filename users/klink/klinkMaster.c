@@ -41,6 +41,8 @@ extern KlinkNode_t* serchKlinkListNode(KlinkNode_t*head,char*  date);
 extern KlinkNode_t* deletKlinkListNode(KlinkNode_t*head,char* date);
 extern void showKlinkNode(KlinkNode_t*head);
 KlinkNode_t* g_pKlinkHead = NULL;
+static KlinkNode_t klinkNodeData;
+
 
 
 KlinkNode_t* createMeshTopologyLinkList(cJSON *root)
@@ -49,15 +51,16 @@ KlinkNode_t* createMeshTopologyLinkList(cJSON *root)
   cJSON *pos;
   cJSON *parameters;
   int slaveNum=0;
-  KlinkNode_t* pKlink=NULL; g_pKlinkHead;
-  KlinkNode_t* pKlinkHead=NULL; g_pKlinkHead;
-    	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+  KlinkNode_t* pKlink=NULL; 
+  KlinkNode_t* pKlinkHead=NULL;
+  KlinkNode_t klinkNodeData;
+  memset(&klinkNodeData,0,sizeof(KlinkNode_t));
+
   g_pKlinkHead=initKlinkListHead();
-  pKlink=g_pKlinkHead;
   pKlinkHead=g_pKlinkHead;
+  
   /*before create mesh device link list ,clear link node first*/
-  clearKlinkList(pKlink);  
-      	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+  clearKlinkList(pKlinkHead);  
   head = cJSON_GetObjectItem(root, "child_devices");
   if(head != NULL)
    {
@@ -67,9 +70,9 @@ KlinkNode_t* createMeshTopologyLinkList(cJSON *root)
     if(parameters != NULL)
     {
       slaveNum++;
+	  strcpy(klinkNodeData.slaveVersionInfo.slaveMac,parameters->valuestring);
 	  /*add slave mesh node to link list tail*/
-	  addKlinkListNode(g_pKlinkHead,parameters->valuestring,KLINK_CREATE_TOPOLOGY_LINK_LIST);
-      printf("====>mac[%s]----slaveNum[%d]\n",parameters->valuestring,slaveNum);
+	  addKlinkListNode(g_pKlinkHead,&klinkNodeData,KLINK_CREATE_TOPOLOGY_LINK_LIST);
     }
    }
   }
@@ -81,9 +84,8 @@ KlinkNode_t* createMeshTopologyLinkList(cJSON *root)
   return pKlinkHead;
 }
 
-KlinkNode_t* createMeshDeviceLinkList()
+KlinkNode_t* createKlinkLinkList()
 {
- printf("%s_%d:\n ",__FUNCTION__,__LINE__);
  char* out=NULL;
  cJSON *root=NULL; 
  FILE *fp=NULL;
@@ -91,9 +93,7 @@ KlinkNode_t* createMeshDeviceLinkList()
  int read=0;
  int len  = 0;
  char*	line  = NULL;   
-  printf("%s_%d:\n ",__FUNCTION__,__LINE__);
  fp = fopen("/tmp/topology_json", "r");
-   printf("%s_%d:\n ",__FUNCTION__,__LINE__);
  if(fp == NULL)
  {
   printf("==>%s_%d:open /tmp/topology_json fail...",__FUNCTION__,__LINE__);
@@ -101,13 +101,10 @@ KlinkNode_t* createMeshDeviceLinkList()
  }
  else
  {
-  printf("%s_%d:\n ",__FUNCTION__,__LINE__);
   read = getline(&line, &len, fp);
   fclose(fp);
-  printf("%s_%d:\n ",__FUNCTION__,__LINE__);
   if(line) 
   {
-    printf("%s_%d:\n ",__FUNCTION__,__LINE__);
    root = cJSON_Parse(line);  
    free(line);    
    if(root==NULL)
@@ -116,19 +113,17 @@ KlinkNode_t* createMeshDeviceLinkList()
    }
    else
    {
-    printf("%s_%d:\n ",__FUNCTION__,__LINE__);
     pKlinkHead=createMeshTopologyLinkList(root);
    }
   }
    else
    {
-    printf("==>%s_%d: topology_json error ",__FUNCTION__,__LINE__);
     return RETURN_FAIL;
    }
 
  }
   out = cJSON_Print(root);
- printf("==>%s_%d:out=[%s] open /tmp/topology_json fail...\n",__FUNCTION__,__LINE__,out);	
+  printf("==>%s_%d:out=\n%s\n\n",__FUNCTION__,__LINE__,out);	
   cJSON_Delete(root);
   return pKlinkHead;
 }
@@ -144,21 +139,24 @@ int parseSlaveVersionConf(int fd, cJSON *messageBody)
    char *pSlaveMac=NULL;
    char tmpBuf[128]={0};
    KlinkNode_t* pKlinkHead=NULL;
+   KlinkNode_t* pKlinkData=&klinkNodeData;
 
    char *pResponseMsg=NULL;
    cJSON *responseJSON=NULL;
+   printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 
    if(jasonObj = cJSON_GetObjectItem(messageBody,"slaveVersion"))
    {
-    pSlaveFwVersion=cJSON_GetObjectItem(jasonObj,"slaveSoftVer")->valuestring;
-    pSlaveMac=cJSON_GetObjectItem(jasonObj,"slaveMac")->valuestring;
+    strcpy(pKlinkData->slaveVersionInfo.slaveSoftVer,cJSON_GetObjectItem(jasonObj,"slaveSoftVer")->valuestring);
+    strcpy(pKlinkData->slaveVersionInfo.slaveMac,cJSON_GetObjectItem(jasonObj,"slaveMac")->valuestring);
    }
 
-   pKlinkHead=createMeshDeviceLinkList();
+   pKlinkHead=createKlinkLinkList();
      	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
-   addKlinkListNode(pKlinkHead,pSlaveFwVersion,KLINK_SLAVE_SOFT_VERSION);
+   addKlinkListNode(pKlinkHead,pKlinkData,KLINK_SLAVE_SOFT_VERSION);
      	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
-   showKlinkNode(pKlinkHead);
+   showKlinkNode(g_pKlinkHead);
+ #if 0
     sprintf(tmpBuf,"%d;%s;%s",pKlinkHead->slaveMeshNum,pSlaveMac,pSlaveFwVersion);
       	printf("%s_%d:tmpBuf=%s\n ",__FUNCTION__,__LINE__,tmpBuf);
 	apmib_set(MIB_KLINK_SLAVE1_SOFT_VERSION, (void *)tmpBuf);
@@ -166,7 +164,7 @@ int parseSlaveVersionConf(int fd, cJSON *messageBody)
 	apmib_get(MIB_KLINK_SLAVE1_SOFT_VERSION, (void *)tmpBuf);
 	printf("%s_%d:set slave version data [%s] ok \n",__FUNCTION__,__LINE__,tmpBuf);
 
-	
+#endif	
 
     /*rend ack message to slave*/
 	responseJSON = cJSON_CreateObject();
@@ -217,60 +215,55 @@ void parseMessageFromSlave(int sd, char* slaveMessage)
 int main(int argc , char *argv[])
 {
     int opt = TRUE;
-    int master_socket , addrlen , new_socket , client_socket[30] , max_clients = 30 , activity, i , valread , sd;
-    int max_sd;
+    int masterSocket , addrlen , newSocket , clientSocket[30] , maxClients = 30 , activity, i , valread , sd;
+    int maxSd;
     struct sockaddr_in address;
       
     char buffer[1025];  //data buffer of 1K
       
-    //set of socket descriptors
+    /*set of socket descriptors*/
     fd_set readfds;
-      
-    //a message
     char *message = "{\"messageType\":\"0\"}";
 
-    //initialise all client_socket[] to 0 so not checked
-    for (i = 0; i < max_clients; i++) 
+    /*initialise all clientSocket[] to 0 so not checked*/
+    for (i = 0; i < maxClients; i++) 
     {
-        client_socket[i] = 0;
+        clientSocket[i] = 0;
     }
       
-    //create a master socket
-    if( (master_socket = socket(AF_INET , SOCK_STREAM , 0)) == 0) 
+    if( (masterSocket = socket(AF_INET , SOCK_STREAM , 0)) == 0) 
     {   
-        close(master_socket);
+        close(masterSocket);
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
   
-    //set master socket to allow multiple connections 
-    if( setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0 )
+    /*set master socket to allow multiple connections*/ 
+    if( setsockopt(masterSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0 )
     {
         perror("setsockopt");
         exit(EXIT_FAILURE);
     }
   
-    //type of socket created
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons( KLINK_PORT );
       
-    //bind the socket to localhost port 8888
-    if (bind(master_socket, (struct sockaddr *)&address, sizeof(address))<0) 
+    if (bind(masterSocket, (struct sockaddr *)&address, sizeof(address))<0) 
     {
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
     printf("Listener on port %d \n", KLINK_PORT);
      
-    //try to specify maximum of 16 pending connections for the master socket
-    if (listen(master_socket, 16) < 0)
+    /*try to specify maximum of 16 pending connections for the master socket*/
+    if (listen(masterSocket, 16) < 0)
     {
         perror("listen");
         exit(EXIT_FAILURE);
     }
       
-    //accept the incoming connection
+    /*accept the incoming connection*/
     addrlen = sizeof(address);
     puts("klink master waiting for connections ...");
     apmib_init(); 
@@ -279,63 +272,63 @@ int main(int argc , char *argv[])
 	//g_pKlinkHead=initKlinkListHead();
     while(TRUE) 
     {
-        //clear the socket set
+        /*clear the socket set*/
         FD_ZERO(&readfds);
   
-        //add master socket to set
-        FD_SET(master_socket, &readfds);
-        max_sd = master_socket;
+        /*add master socket to set*/
+        FD_SET(masterSocket, &readfds);
+        maxSd = masterSocket;
          
-        //add child sockets to set
-        for ( i = 0 ; i < max_clients ; i++) 
+        /*add child sockets to set*/
+        for ( i = 0 ; i < maxClients ; i++) 
         {
-            //socket descriptor
-            sd = client_socket[i];
+            /*socket descriptor*/
+            sd = clientSocket[i];
              
-            //if valid socket descriptor then add to read list
+            /*if valid socket descriptor then add to read list*/
             if(sd > 0)
                 FD_SET( sd , &readfds);
              
-            //highest file descriptor number, need it for the select function
-            if(sd > max_sd)
-                max_sd = sd;
+            /*highest file descriptor number, need it for the select function*/
+            if(sd > maxSd)
+                maxSd = sd;
         }
   
-        //wait for an activity on one of the sockets , timeout is NULL , so wait indefinitely
-        activity = select( max_sd + 1 , &readfds , NULL , NULL , NULL);
+        /*wait for an activity on one of the sockets , timeout is NULL , so wait indefinitely*/
+        activity = select( maxSd + 1 , &readfds , NULL , NULL , NULL);
     
         if ((activity < 0) && (errno!=EINTR)) 
         {
             printf("select error");
         }
           
-        //If something happened on the master socket , then its an incoming connection
-        if (FD_ISSET(master_socket, &readfds)) 
+        /*If something happened on the master socket , then its an incoming connection*/
+        if (FD_ISSET(masterSocket, &readfds)) 
         {
-            if ((new_socket = accept(master_socket, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0)
+            if ((newSocket = accept(masterSocket, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0)
             {
                 perror("accept");
                 exit(EXIT_FAILURE);
             }
           
-            //inform user of socket number - used in send and receive commands
-            printf("New connection , socket fd is %d , ip is : %s , port : %d \n" , new_socket , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
+            /*inform user of socket number - used in send and receive commands*/
+            printf("new connection , socket fd is %d , ip is : %s  \n" , newSocket , inet_ntoa(address.sin_addr) );
         
-            //send new connection greeting message
-            if( send(new_socket, message, strlen(message), 0) != strlen(message) ) 
+            /*send new connection greeting message*/
+            if( send(newSocket, message, strlen(message), 0) != strlen(message) ) 
             {
                 perror("send");
             }
               
             puts("Welcome message sent successfully");
               
-            //add new socket to array of sockets
-            for (i = 0; i < max_clients; i++) 
+            /*add new socket to array of sockets*/
+            for (i = 0; i < maxClients; i++) 
             {
-                //if position is empty
-                if( client_socket[i] == 0 )
+                /*if position is empty*/
+                if( clientSocket[i] == 0 )
                 {
-                    client_socket[i] = new_socket;
+                    clientSocket[i] = newSocket;
                     printf("Adding to list of sockets as %d\n" , i);
                      
                     break;
@@ -343,34 +336,32 @@ int main(int argc , char *argv[])
             }
         }
           
-        //else its some IO operation on some other socket :)
-        for (i = 0; i < max_clients; i++) 
+        /*else its some IO operation on some other socket :)*/
+        for (i = 0; i < maxClients; i++) 
         {
-            sd = client_socket[i];
+            sd = clientSocket[i];
               
             if (FD_ISSET( sd , &readfds)) 
             {
-                //Check if it was for closing , and also read the incoming message
+                /*Check if it was for closing , and also read the incoming message*/
                 if ((valread = read( sd , buffer, 1024)) == 0)
                 {
-                    //Somebody disconnected , get his details and print
+                    /*somebody disconnected , get his details and print*/
                     getpeername(sd , (struct sockaddr*)&address , (socklen_t*)&addrlen);
                     printf("Host disconnected , ip %s , port %d \n" , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
                       
-                    //Close the socket and mark as 0 in list for reuse
+                    /*Close the socket and mark as 0 in list for reuse*/
                     close( sd );
-                    client_socket[i] = 0;
+                    clientSocket[i] = 0;
                 }
                   
-                //Echo back the message that came in
+                /*Echo back the message that came in*/
                 else
                 {
-                    //set the string terminating NULL byte on the end of the data read
+                    /*set the string terminating NULL byte on the end of the data read*/
                     buffer[valread] = '\0';
 					printf("++++get info from slave :%s\n",buffer);
-                   // send(sd , buffer , strlen(buffer) , 0 );
-                   parseMessageFromSlave(sd, (char*)buffer);
-
+                    parseMessageFromSlave(sd, (char*)buffer);
                 }
             }
         }

@@ -78,65 +78,62 @@ int clearKlinkList( KlinkNode_t *head)
 }  
 
 /*add mode*/
-KlinkNode_t *addKlinkListNode(KlinkNode_t*head,char* date,int type)
+KlinkNode_t *addKlinkListNode(KlinkNode_t*head,KlinkNode_t *pdata,int type)
 {
-     	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
    KlinkNode_t *phead,*new_node;
    phead=head;
-   	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+
    if(NULL==phead)
    {
-   printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 	return NULL;	
    }
    else
-   {
-   	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+   { 
 	while(phead->next!=NULL)   
 	{   
-	    /*slave already int the link list,exit*/
-	    if((!strcmp(phead->next->slaveVersionInfo.slaveMac,date))&&(type==KLINK_CREATE_TOPOLOGY_LINK_LIST))
+	    /*if found same slave node already in the link list,just update node data*/
+	    if(!strcmp(phead->next->slaveVersionInfo.slaveMac,pdata->slaveVersionInfo.slaveMac))
 	    {
-	     printf("==>%s_%d:slave already in the link list",__FUNCTION__,__LINE__);
+	     printf("==>%s_%d:found same mesh device in the link node list\n",__FUNCTION__,__LINE__);
+		 if(strcmp(phead->next->slaveVersionInfo.slaveSoftVer,pdata->slaveVersionInfo.slaveSoftVer))
+		 {
+		  memset(phead->next->slaveVersionInfo.slaveSoftVer,0,sizeof(phead->next->slaveVersionInfo.slaveSoftVer));
+		  strcpy(phead->next->slaveVersionInfo.slaveSoftVer,pdata->slaveVersionInfo.slaveSoftVer);
+		 }
 		 return phead;
 	    }
 		phead=phead->next;		
 	}
-		printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+      /*else add new node to the link list tail*/
 	  if(NULL!=(new_node=(KlinkNode_t*)malloc(sizeof(KlinkNode_t))))
 	  {
-	  printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 	      if(type==KLINK_CREATE_TOPOLOGY_LINK_LIST)
 	      {
-	      printf("%s_%d:\n ",__FUNCTION__,__LINE__);
-	       strcpy(new_node->slaveVersionInfo.slaveMac,date);
+
+	       strcpy(new_node->slaveVersionInfo.slaveMac,pdata->slaveVersionInfo.slaveMac);
 	      }	
 		  else if(type==KLINK_SLAVE_SOFT_VERSION)
 		  {
-		  printf("%s_%d:\n ",__FUNCTION__,__LINE__);
-		   strcpy(new_node->slaveVersionInfo.slaveSoftVer,date);		   
+		   strcpy(new_node->slaveVersionInfo.slaveSoftVer,pdata->slaveVersionInfo.slaveSoftVer);		   
 		  }
 		  phead->next=new_node;
 		  new_node->next=NULL;
-		  printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 		  if(type==KLINK_CREATE_TOPOLOGY_LINK_LIST)
 	      {
-		  printf("add list succed :%s\n",new_node->slaveVersionInfo.slaveMac);
+		  printf("add list succed :data= %s\n",new_node->slaveVersionInfo.slaveMac);
 		  }
 		   else if(type==KLINK_SLAVE_SOFT_VERSION)
 		  {
-		  printf("%s_%d:\n ",__FUNCTION__,__LINE__);
-		  printf("add list succed :%s\n",new_node->slaveVersionInfo.slaveSoftVer);	   
+		  printf("add list succed :data= %s\n",new_node->slaveVersionInfo.slaveSoftVer);	   
 		  }
 		 return phead;
 	  }	   
    }
-   	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 }
  
 /*search node*/
 
-KlinkNode_t* serchKlinkListNode(KlinkNode_t*head,char* date)
+KlinkNode_t* serchKlinkListNode(KlinkNode_t*head,KlinkNode_t *pdata)
 {
 	KlinkNode_t *phead=head;
 	if(phead==NULL)
@@ -144,13 +141,13 @@ KlinkNode_t* serchKlinkListNode(KlinkNode_t*head,char* date)
 		printf("head_node is empty\n");
 		return NULL;
 	}
-	while(phead->date!=date&&phead->next!=NULL)
+	while(strcmp(phead->slaveVersionInfo.slaveMac,pdata->slaveVersionInfo.slaveMac)&&phead->next!=NULL)
 	{    
 		phead=phead->next;
 	}
-	if(!(strcmp(phead->date,date)))
+	if(!(strcmp(phead->slaveVersionInfo.slaveMac,pdata->slaveVersionInfo.slaveMac)))
 	{
-		printf("serch succed phead->date=%s\n",phead->date);
+		printf("serch succed klink node data=%s\n",phead->slaveVersionInfo.slaveMac);
 		printf("#################\n");
 		return phead;
 	}
@@ -162,8 +159,8 @@ KlinkNode_t* serchKlinkListNode(KlinkNode_t*head,char* date)
 	}
 }
 
-//delete node
-KlinkNode_t* deletKlinkListNode(KlinkNode_t*head,char* date)
+/*delete klink node*/
+KlinkNode_t* deletKlinkListNode(KlinkNode_t*head,KlinkNode_t *pdata)
 {
 	KlinkNode_t *phead=head;
 	KlinkNode_t *q=head;
@@ -174,15 +171,15 @@ KlinkNode_t* deletKlinkListNode(KlinkNode_t*head,char* date)
 	}
 	else
 	{
-		while(strcmp(phead->date,date)&&phead->next!=NULL)
+		while(strcmp(phead->slaveVersionInfo.slaveMac,pdata->slaveVersionInfo.slaveMac)&&phead->next!=NULL)
 		{
 			q=phead;
 			phead=phead->next;
 		}
-		if(!strcmp(phead->date,date))
+		if(!strcmp(phead->slaveVersionInfo.slaveMac,pdata->slaveVersionInfo.slaveMac))
 		{
 			q->next=phead->next;
-			printf("free %s succed\n",phead->date);
+			printf("free %s succed\n",phead->slaveVersionInfo.slaveMac);
 			free(phead);			
 			printf("#################\n");
 		}
@@ -194,6 +191,7 @@ KlinkNode_t* deletKlinkListNode(KlinkNode_t*head,char* date)
 	}	
 }
 
+/*print klink node data*/
 void showKlinkNode(KlinkNode_t*head)
 {
 	KlinkNode_t *phead=head;
@@ -213,22 +211,4 @@ void showKlinkNode(KlinkNode_t*head)
 		printf("#################\n");
 	}	
 }
-#if 0
-int main(int argc,char*argv[])
-{
-	KlinkNode_t *head=NULL;
-    int i;
-	head=initKlinkListHead();
-	for(i=0;i<10;i++)
-	{
-		addKlinkListNode(head,i);		
-	}
-	showKlinkNode(head);
-	serchKlinkListNode(head,5);
-	showKlinkNode(head);
-	deletKlinkListNode(head,7);
-	showKlinkNode(head);
-return 0;
-}
-#endif
 
