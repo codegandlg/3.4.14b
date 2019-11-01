@@ -200,6 +200,36 @@ function pw_less(){
 
 function saveChanges_basic(form, wlan_id)//saveChanges_basic(document.wlanSetup, wlan_idx)
 {
+	//弹出窗口******start********
+			//获取窗口的高度 
+			 var windowHeight; 
+			 //获取窗口的宽度 
+			 var windowWidth; 
+			 //获取弹窗的宽度 
+			 var popWidth; 
+			 //获取弹窗高度 
+			 var popHeight; 
+			 function init(){ 
+			    windowHeight=$(window).height(); 
+			    windowWidth=$(window).width(); 
+			    popHeight=$(".window").height(); 
+			    popWidth=$(".window").width(); 
+			 } 
+			 
+			 //定义弹出居中窗口的方法 
+		     function popCenterWindow(){ 
+		         init(); 
+		         //计算弹出窗口的左上角Y的偏移量 
+				 var popY=(windowHeight-popHeight)/2; 
+			     var popX=(windowWidth-popWidth)/2; 
+			      //设定窗口的位置 
+			     $("#center").css("top",popY).css("left",popX).slideToggle("slow");  
+		      }
+	    	
+	    	//弹出窗口******end********
+	popCenterWindow();
+	$(".popup").show();
+	$(".popup,.popbox").css("display","block");
 	if(document.wlanSetup.autoWlanEnabled.checked){
 		var index1=document.getElementById("method1").selectedIndex;
 		var index2=document.getElementById("method2").selectedIndex; 
@@ -295,16 +325,21 @@ function saveChanges_basic(form, wlan_id)//saveChanges_basic(document.wlanSetup,
 	}
    	if (!form.elements["wlanDisabled"+wlan_id].checked)
 	{
-		var idx_value = form.elements["band"+wlan_id].selectedIndex;
-		var band_value = form.elements["band"+wlan_id].options[idx_value].value;
-		var band = parseInt(band_value, 10) + 1;
+		var idx_value = form.elements["band1"].selectedIndex;
+		var band_value1 = form.elements["band1"].options[idx_value].value;
+		var idx_value2 = form.elements["band0"].selectedIndex;
+		var band_value2 = form.elements["band0"].options[idx_value2].value;
+		var band1 = parseInt(band_value1, 10) + 1;
+		var band2 = parseInt(band_value2, 10) + 1;
 
 		var wlBandMode =form.elements["wlBandMode"].value ;
 			
 		if(wlBandMode == 3) // 3:BANDMODESIGNLE
 		{
-			var selectText=form.elements["band"+wlan_id].options[idx_value].text.substr(0,1);
-			var bandOption = form.elements["band"+wlan_id].options.value;
+			var selectText=form.elements["band0"].options[idx_value].text.substr(0,1);
+			var selectText2=form.elements["band1"].options[idx_value2].text.substr(0,1);
+			var bandOption = form.elements["band0"].options.value;
+			var bandOption2 = form.elements["band1"].options.value;
 			
 			//if(selectText=='2') //match '2'
 			if(bandOption == 0 || bandOption == 1 || (bandOption == 7 && selectText=='2') || bandOption == 2 || bandOption == 9 || bandOption == 10)
@@ -312,6 +347,16 @@ function saveChanges_basic(form, wlan_id)//saveChanges_basic(document.wlanSetup,
 				form.elements["Band2G5GSupport"].value = 1;//1:PHYBAND_2G
 			}
 			else if(bandOption == 3 || (bandOption == 7 && selectText=='5') || bandOption == 11)
+			{
+				form.elements["Band2G5GSupport"].value = 2;//2:PHYBAND_5G
+			}
+			
+			//if(selectText=='2') //match '2'
+			if(bandOption2 == 0 || bandOption2 == 1 || (bandOption2 == 7 && selectText2=='2') || bandOption2 == 2 || bandOption2 == 9 || bandOption2 == 10)
+			{
+				form.elements["Band2G5GSupport"].value = 1;//1:PHYBAND_2G
+			}
+			else if(bandOption2 == 3 || (bandOption2 == 7 && selectText2=='5') || bandOption2 == 11)
 			{
 				form.elements["Band2G5GSupport"].value = 2;//2:PHYBAND_5G
 			}

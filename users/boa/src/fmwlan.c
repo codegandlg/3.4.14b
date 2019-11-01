@@ -3680,12 +3680,15 @@ void formWlanSetupAll(request *wp, char *path, char *query)
 
     DTRACE(DTRACE_FMWLAN, "apmib_update_web ok.\n");
 
-//    run_init_script("bridge");
     submit_url = req_get_cstream_var(wp, ("wlan-url"), ""); // hidden page	
-	OK_MSG(submit_url);
+	//OK_MSG(submit_url);
     wlan_idx = old_wlan_idx;
     vwlan_idx = old_vwlan_idx;
     DTRACE(DTRACE_FMWLAN, "return ok.\n");
+
+    run_init_script_flag = 1;
+    run_init_script("bridge");
+    REBOOT_WAIT(submit_url);
 	return;
 
 setErr_wlan:

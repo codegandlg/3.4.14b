@@ -21,7 +21,7 @@
 				<div class="form-group" style="margin-bottom: 10px;">
 					<div class="intell guest_mode i18n" name="macFliter_title_ipfilter">&nbsp;</div>
 					<div class="switch_check">
-						<input type="checkbox" class="checkbox_switch" data-size="mini" name="enabled" id="checkbox_switch1" value="ON"/>
+						<input type="checkbox" class="checkbox_switch" data-size="mini" name="enabled" id="checkbox_switch1" value="ON" style="display: none;"/>
 					</div>
 				</div>
 				<div class="form-group_smart"><p class="p_tips i18n" name="p_tips_ipfilter"></p></div>
@@ -35,7 +35,6 @@
 						<option value="1">TCP</option>
 						<option value="2">UDP</option>
 					</select>
-					<span class="caret" style="position: relative;left: -30px;"></span>
 				</div>
 				<div class="form-group_smart firewall ip_filter"><label class="i18n" name="iptips_ipfilter">&nbsp;</label><input class="form_input" type="text"  name="comment"/></div>
 				<div class="form-group form-group-btn firewall">
@@ -81,10 +80,12 @@
 							enableTextField(document.formFilterAdd.ip);
 							enableTextField(document.formFilterAdd.protocol);
 							$(".checkbox_switch1").val("ON");
+							updateState();
 						} else {
 							disableTextField(document.formFilterAdd.ip);
 						  	disableTextField(document.formFilterAdd.protocol);
 							$(".checkbox_switch1").val("OFF");
+							updateState();
 						}
 					}
 				});
@@ -138,7 +139,6 @@
 			{
 				var ipfilter_input_value=$("#ipfilter_input1").val()+"."+$("#ipfilter_input2").val()+"."+$("#ipfilter_input3").val()+"."+$("#ipfilter_input4").val()
 			  	$("#ip_value_ipfilter").val(ipfilter_input_value);
-//			  	alert(ipfilter_input_value);
 			  if (!document.formFilterAdd.enabled.checked)
 			  	return true;
 			

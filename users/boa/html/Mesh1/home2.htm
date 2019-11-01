@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
@@ -11,12 +11,11 @@
 		<link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.min.css"/>
 		<link rel="stylesheet" type="text/css" href="css/libs/font-awesome.css"/>	
 		<link rel="stylesheet" href="css/bootstrap-switch.min.css" />
-		<!--<link rel="stylesheet" type="text/css" href="css/compiled/theme_styles.css"/>-->
 		<link rel="stylesheet" type="text/css" href="css/base.css"/>
 		<link rel="stylesheet" href="css/main.css" />
 		<link type="image/x-icon" href="img/favicon.png" rel="shortcut icon"/>
 	</head>
-	<body style="overflow: hidden;">
+	<body>
 		 <div class="main-wrap">
 		 	<div class="header">
 			 	<div class="header-wrap">
@@ -28,7 +27,7 @@
 			 					<option value="zh-CN">中文</option>
 			 					<option value="en">English</option>
 			 				</select>
-			 				<span class="caret" style="position: relative;left: -35px;"></span>
+			 				
 			 			</div>
 			 			<span class="separate">|</span>
 			 			<form action="/boafrm/formLogout" method="POST" name="logout" style="display: inline-block;">
@@ -73,7 +72,6 @@
 			var content_height=window.innerHeight-top_height-bottom_height;	
 			var click_value;
 			$(".iframe_holder").height(content_height);
-//			$(".iframe_holder").width(window.outerWidth);
 			//单击导航栏时设置iframe对应页面
 			var iframe_href;
 			$(".nav li").click(function() {
@@ -82,8 +80,6 @@
 				$(this).addClass("active");
 				$(this).siblings().removeClass("active");
 				click_value=$(this).attr("value");
-//				document.cookie="nav_value="+value+"";
-//				document.cookie="nav_href="+iframe_href+"";
 			});
 			
 			$(".nav li").each(function(){
@@ -93,41 +89,12 @@
 		        	$(this).addClass("active");
 					$(this).siblings().removeClass("active");
 		        }
-		    })
-//			function setting(){
-////				$(".nav li:first-child").addClass("active")
-//				var nav_value=getCookie('nav_value');
-//				var nav_href=getCookie("nav_href");
-//	        	$(".nav li").each(function(){
-//		        	var value=$(this).attr("value");
-//		        	var iframe_href = $(this).find("a").attr("href_val");
-//		        	if(value==nav_value){
-//		        		$(this).addClass("active");
-//						$(this).siblings().removeClass("active");
-//		        	}
-//		        	if(iframe_href==nav_href){
-//		        		$(".iframe_holder").attr("src",nav_href);
-//		        	}
-//		        })
-//			}
-//			
-//	        function getCookie(name) {
-//			  var cookies = document.cookie;
-//			  var list = cookies.split("; ");          // 解析出名/值对列表
-//			      
-//			  for(var i = 0; i < list.length; i++) {
-//			    var arr = list[i].split("=");          // 解析出名和值
-//			    if(arr[0] == name)
-//			      return decodeURIComponent(arr[1]);   // 对cookie值解码
-//			  } 
-//			  return "";
-//			}
+		   })
 			function clearAuthData(iframe_href)
 			{
 				
 			  if (document.all) 
 			  {
-			    // Internet Explorer: 'ClearAuthenticationCache' is only available in IE
 			    document.execCommand('ClearAuthenticationCache');
 			
 				} 
@@ -152,7 +119,6 @@
 			    {
 			        xmlhttp.abort();
 			    }
-			    // Firefox/Mozilla: use anonymous "login" to trigger a "logout"
 			    xmlhttp.open('GET', '/?sling:authRequestLogin=1', false, 'anonymous', 'null');
 			    xmlhttp.send('');
 			}

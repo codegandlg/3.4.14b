@@ -20,10 +20,12 @@
 				display: none;
 			}
 			.form-group_smart input.time_t{
-				width: 50px;
+				width: 25px;
 				margin: 0 5px;
+				padding-left: 3px;
 			}
 			.form-group_smart input.time1{
+				width: 40px;
 				margin-left: 15px;
 			}
 			.systemmanage_button .button_submit{
@@ -41,9 +43,9 @@
 				<div class="form-group_smart  systemmanage_button" style="margin-bottom: 10px;">
 					<label class="i18n" name="light_system"></label>
 					<div class="switch_check">
-						<input type="checkbox" class="checkbox_switch2" data-size="mini" />
+						<input type="checkbox" class="checkbox_switch2" data-size="mini" style="display: none;"/>
 					</div>
-					<input type="hidden" name="led_enabled" id="checkbox_switch2"/>
+					<input type="hidden" name="led_enabled" id="checkbox_switch2" style="display: none;"/>
 					<button type="submit" name="save_apply" class="i18n" value="1"></button>
 				</div>				
 				<input type="hidden" value="/systemmanage.html" name="submit-url">
@@ -52,7 +54,7 @@
 				<div class="form-group_smart" style="margin-bottom: 10px;padding-left: 10px;height: 42px;">
 					<label class="i18n systemmanage_button1" name="sleep_system"></label>
 					<div class="switch_check" style="height: 42px;line-height: 42px;">
-						<input type="checkbox" class="checkbox_switch1" data-size="mini" />
+						<input type="checkbox" class="checkbox_switch1" data-size="mini" style="display: none;"/>
 					</div>
 					<input type="hidden" name="timer_reboot_enabled" id="checkbox_switch1"/>
 					<div class="time_hide" style="height: 35px;">
@@ -243,8 +245,18 @@
 				return true;
 			}
 			function submit_click(){
-				$("#timer_reboot_time").val(hours_value+':'+minutes_value);
-				$("#time_value_submit").val(hours_value+':'+minutes_value);
+				var timer_reboot_time=$("#timer_reboot_time").val();
+//				var timer_reboot_time="5:08";
+				var aa=timer_reboot_time.split(":");
+				var ss=aa[0];
+				if(hours_value=="0"&&minutes_value=="00"){
+					$("#timer_reboot_time").val(aa[0]+":"+aa[1]);
+					$("#time_value_submit").val(aa[0]+":"+aa[1]);
+				}else{
+					$("#timer_reboot_time").val(hours_value+':'+minutes_value);
+					$("#time_value_submit").val(hours_value+':'+minutes_value);
+				}
+				
 				return true;
 			}
 			function set_option(){

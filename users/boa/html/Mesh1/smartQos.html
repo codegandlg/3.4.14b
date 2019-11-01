@@ -20,16 +20,19 @@
 		<script src="js/bootstrap.js"></script>
 		<script src="js/bootstrap-switch.min.js"></script>
 	</head>
+	<style type="text/css">
+		.form-group_smart label{
+			width: 125px;
+		}
+	</style>
 	<body onload="Load_Setting();">
 		<div class="guest_net">
 			<form  action="/boafrm/formIpQoS" method="POST" name="formQosAdd">
 				<input type=hidden name="lan_mask" value="<% getInfo("mask-rom"); %>">
-				<!--<input type="hidden" value="/smartQos.html" name="submit-url">-->
 				<div class="form-group_smart" style="margin-bottom: 10px;">
-					<!--<label style="width: 50px;"></label>-->
 					<label class="i18n" name="title_smart"></label>
 					<div class="switch_check">
-						<input type="checkbox" class="checkbox_switch" data-size="mini" name="enabled" value="ON" />
+						<input type="checkbox" class="checkbox_switch" data-size="mini" name="enabled" value="ON" style="display: none;"/>
 					</div>
 				</div>
 				<div class="up_dowm">
@@ -117,20 +120,17 @@
 	
 				})
 				
-//				var switch_status=$('.checkbox_switch').bootstrapSwitch('state');
 			})
 			function Load_Setting()//页面初始化
 			{
 				if ( qosEnabled_status =='0'){
 					$('[name="enabled"]').bootstrapSwitch('state', false);
-//					document.formQosAdd.enabled.checked=false;
 					disableTextField(document.formQosAdd.automaticUplinkSpeed);
 	 				disableTextField(document.formQosAdd.automaticDownlinkSpeed);
 	 				disableTextField(document.formQosAdd.manualUplinkSpeed);
 	 				disableTextField(document.formQosAdd.manualDownlinkSpeed);
 				} else {
-					$('[name="enabled"]').bootstrapSwitch('state',true);
-//					document.formQosAdd.enabled.checked=true;					
+					$('[name="enabled"]').bootstrapSwitch('state',true);				
 	 				enableTextField(document.formQosAdd.automaticUplinkSpeed);
 					enableTextField(document.formQosAdd.automaticDownlinkSpeed);
 					if(document.formQosAdd.automaticUplinkSpeed.checked) {

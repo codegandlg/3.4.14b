@@ -64,6 +64,8 @@ function callbackFunction()
 			/* content-type:text/html ret:upspeed=%dTX&downspeed=%dRX */
 			var speedUp, speedDown;
             var returnValue = xhr.responseText;
+            document.getElementById("wanUplinkRate").innerHTML = "" ;
+			document.getElementById("wanDownlinkRate").innerHTML = "" ;
 
             if(returnValue != null && returnValue.length > 0)
             {
@@ -88,6 +90,7 @@ function callbackFunction()
             }
             else
             {
+            	
                 alert("结果为空！");
             }
         } 

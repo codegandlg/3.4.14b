@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+	<meta id="i18n_pagename" content="index-common">
+	<link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.min.css"/>
+	<link rel="stylesheet" href="css/progress.css" />
+	<link type="image/x-icon" href="img/favicon.png" rel="shortcut icon"/>
+</head>
+<body>
+	<div class="popup"></div>
+	<div class="popbox window" id="center">
+		<div class="progress">
+			<div class="wrapper">
+				<div class="load-bar">
+					<div class="load-bar-inner" data-loading="0">
+						<span id="counter">1%</span></div>
+				</div>
+				<p class="i18n" name="reset_name_internet"></p>
+			</div>
+		</div>
+	</div>
+	<script src="js/jquery.js"></script>
+	<script src="js/bootstrap.js"></script>
+	<script src="js/jquery.cookie.js"></script>
+	<!-- 加载语言包文件 -->
+	<script src="js/jquery.i18n.properties.js"></script>
+	<script src="js/language.js"></script>
+	<script>
+	//进度条-start
+	//获取窗口的高度 
+	 var windowHeight; 
+	 //获取窗口的宽度 
+	 var windowWidth; 
+	 //获取弹窗的宽度 
+	 var popWidth; 
+	 //获取弹窗高度 
+	 var popHeight; 
+	 function init(){ 
+	    windowHeight=$(window).height(); 
+	    windowWidth=$(window).width(); 
+	    popHeight=$(".window").height(); 
+	    popWidth=$(".window").width(); 
+	 } 
+	 popCenterWindow();
+	 $(".popup").show();
+	 //定义弹出居中窗口的方法 
+     function popCenterWindow(){ 
+         init(); 
+         //计算弹出窗口的左上角Y的偏移量 
+		 var popY=(windowHeight-popHeight)/2; 
+	     var popX=(windowWidth-popWidth)/2; 
+	      //设定窗口的位置 
+	     $("#center").css("top",popY).css("left",popX).slideToggle("slow");  
+      }
+		
+		var interval;
+		var count = <% getInfo("countDownTime"); %>*1;		
+		var connect_url="192.168.1.254";
+		var count_number=1;
+		if (count_number > 0) 
+		{								
+			interval = setInterval(increment, 500);
+		}
+		
+		function increment() {			
+			count_number++;
+			count--;
+			$('#counter').html(count_number + '%');
+			if(count_number == 100||count==0) {
+				$(".progress").css("display","none");
+				do_count_down();
+				clearInterval(interval);
+			}
+		}		
+		//进度条——end	
+		function do_count_down()
+		{
+			if(count == 0) 
+			{
+				var old_url=window.location.href;
+				var https;
+                if(old_url.indexOf("https:")>=0)
+                {
+                    https=1;
+                }
+                else
+                {
+                    https=0;
+                }
+                var lastUrl="<% getInfo("lastUrl"); %>";
+//              var lastUrl="ddddd";
+				
+				if(lastUrl == "/wizard.htm")
+				{
+                    if(https==1)
+                        parent.location.href = 'https://'+connect_url;
+                    else
+                        parent.location.href = 'http://'+connect_url;
+                }
+				else
+				{
+				    if(https==1)	
+                    {
+                        var location_href = 'https://'+connect_url+'?t='+new Date().getTime();				
+                        parent.location.href = 'https://'+connect_url;
+                    }else
+                    {
+					var location_href = 'http://'+connect_url+'?t='+new Date().getTime();								
+					parent.location.href = 'http://'+connect_url;
+                    }
+				}
+			}
+		}
+         
+	</script>
+</body>
+</html>

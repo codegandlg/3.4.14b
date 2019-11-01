@@ -249,10 +249,7 @@ int main()
 		    printf("=>map_controller=%d\n",mapStatus);
 			continue;
 		   }
-		   if(access("/tmp/topology_json",F_OK)!=0)
-		   	{
-		   	 continue;
-		   	}
+
 		    if( MAP_UNCONFIGURED==mapStatus)
 		    {
 		     printf("=>mesh havn't config\n");
@@ -260,6 +257,9 @@ int main()
 
     		if(MAP_CONTROLLER==mapStatus)
 			{
+			 if(access("/tmp/topology_json",F_OK)!=0)
+		   	 continue;
+
 			 klinkMasterPid = getProcessPid("klinkM");
 			 if(klinkMasterPid <= 0)
 			 {

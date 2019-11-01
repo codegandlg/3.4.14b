@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
@@ -9,7 +9,6 @@
 	    <meta http-equiv="Access-Control-Allow-Origin" content="*">
 		<link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.min.css"/>
 		<link rel="stylesheet" type="text/css" href="css/libs/font-awesome.css"/>		 
-		<!--<link rel="stylesheet" type="text/css" href="css/compiled/theme_styles.css"/>-->
 		<link rel="stylesheet" type="text/css" href="css/base.css"/>
 		<link rel="stylesheet" href="css/main.css" />
 		<link type="image/x-icon" href="img/favicon.png" rel="shortcut icon"/>
@@ -25,13 +24,11 @@
 		 				<div class="link_content">
 			 				<ul>
 			 					<li><a href="internet.html"><img src="img/content_icon_network@2x.png" class="link_img" /></a></li>
-			 					<li><a href="#"><span><i class="fa fa-long-arrow-up"></i><span id="wanUplinkRate">0Kbps</span></span><div class="link_line"><div class="connect_status"></div><div class="connect_status2"></div></div><span><i class="fa fa-long-arrow-down"></i><span id="wanDownlinkRate">0Kbps</span></span></a></li>
+			 					<li><a href="#"><span><i class="fa fa-long-arrow-up"></i><span id="wanUplinkRate">0.00Kbps</span></span><div class="link_line"><div class="connect_status"></div><div class="connect_status2"></div></div><span><i class="fa fa-long-arrow-down"></i><span id="wanDownlinkRate">0.00Kbps</span></span></a></li>
 			 					<li><a href="wifiset.html"><img src="img/content_icon_machine.png" class="link_img" /></a></li>
 			 					<li><a href="#"><span><span>2.4G</span></span><div class="link_line"><div class="connect_status"></div><div class="connect_status2"></div></div><span><span>5G</span></span></a></li>
 			 					<li><a href="terminal.html"><img src="img/content_icon_terminal@2x.png" class="link_img" /><div class="terminal_status"><span><%getTotalOnlineClientNum();%></span></div></a></li>
 			 				</ul>
-			 				
-			 				<!--<div class="time_count"><span>上网时长：<% getInfo("uptime"); %></span></div>-->
 		 				</div>
 		 			</div>
 		 			<div class="link_topo">
@@ -80,9 +77,6 @@
 		<script src="js/xmlhttpreq.js"></script>
 		<script type="text/javascript">
 		 	//***************拓扑结构图***************
-//		var object_json={"device_name":"EasyMesh_Device","ip_addr":"192.168.1.10","mac_address":"00e04c8136c1","neighbor_devices":[{"neighbor_mac":"00e04c8199c1","neighbor_name":"EasyMesh_Device","neighbor_rssi":"15","neighbor_band":"5G"}],"station_info":[{"station_mac":"2054fa2a55ab","station_rssi":"45","station_connected_band":"5G","station_downlink":"292","station_uplink":"24"}],"child_devices":[{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.100","mac_address":"00e04c8199c1","neighbor_devices":[],"station_info":[{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"}],"child_devices":[{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.100","mac_address":"00e04c8199c1","neighbor_devices":[],"station_info":[],"child_devices":[]}]},{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.100","mac_address":"00e04c8199c1","neighbor_devices":[],"station_info":[],"child_devices":[{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.101","mac_address":"00e04c7396c1","neighbor_devices":[],"station_info":[{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"}],"child_devices":[]}]},{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.102","mac_address":"00e04c8196c1","neighbor_devices":[{"neighbor_mac":"00e04c7396c1","neighbor_name":"EasyMesh_Device","neighbor_rssi":"40","neighbor_band":"5G"}],"station_info":[],"child_devices":[{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.101","mac_address":"00e04c7396c1","neighbor_devices":[],"station_info":[],"child_devices":[]},{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.101","mac_address":"00e04c7396c1","neighbor_devices":[],"station_info":[{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"}],"child_devices":[]},{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.101","mac_address":"00e04c7396c1","neighbor_devices":[],"station_info":[{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"}],"child_devices":[]},{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.101","mac_address":"00e04c7396c1","neighbor_devices":[],"station_info":[{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"}],"child_devices":[]},{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.101","mac_address":"00e04c7396c1","neighbor_devices":[],"station_info":[{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"}],"child_devices":[{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.100","mac_address":"00e04c8199c1","neighbor_devices":[],"station_info":[{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"}]}]}]}]};
-//		var object_json={"device_name":"EasyMesh_Device","ip_addr":"192.168.1.10","mac_address":"00e04c8136c1","neighbor_devices":[{"neighbor_mac":"00e04c8199c1","neighbor_name":"EasyMesh_Device","neighbor_rssi":"15","neighbor_band":"5G"},{"neighbor_mac":"00e04c8196c1","neighbor_name":"EasyMesh_Device","neighbor_rssi":"20","neighbor_band":"ERR"}],"station_info":[{"station_mac":"2054fa2a55ab","station_rssi":"45","station_connected_band":"5G","station_downlink":"292","station_uplink":"24"},{"station_mac":"d016b4f4083f","station_rssi":"38","station_connected_band":"5G","station_downlink":"234","station_uplink":"6"},{"station_mac":"a45046fdc3c5","station_rssi":"49","station_connected_band":"5G","station_downlink":"866","station_uplink":"6"},{"station_mac":"c0ccf8d4ba1f","station_rssi":"72","station_connected_band":"5G","station_downlink":"866","station_uplink":"24"},{"station_mac":"9c4fda6281fa","station_rssi":"54","station_connected_band":"2G","station_downlink":"65","station_uplink":"24"},{"station_mac":"4c49e30a1cee","station_rssi":"43","station_connected_band":"2G","station_downlink":"65","station_uplink":"1"},{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"},{"station_mac":"c09ad0de69af","station_rssi":"40","station_connected_band":"2G","station_downlink":"26","station_uplink":"24"}],"child_devices":[{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.100","mac_address":"00e04c8199c1","neighbor_devices":[],"station_info":[{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"},{"station_mac":"c09ad0de69af","station_rssi":"40","station_connected_band":"2G","station_downlink":"26","station_uplink":"24"},{"station_mac":"04d13aef56e3","station_rssi":"52","station_connected_band":"2G","station_downlink":"72","station_uplink":"6"},{"station_mac":"c09ad0de69af","station_rssi":"40","station_connected_band":"2G","station_downlink":"26","station_uplink":"24"}],"child_devices":[]},{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.100","mac_address":"00e04c8199c1","neighbor_devices":[],"station_info":[],"child_devices":[]},{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.102","mac_address":"00e04c8196c1","neighbor_devices":[{"neighbor_mac":"00e04c7396c1","neighbor_name":"EasyMesh_Device","neighbor_rssi":"40","neighbor_band":"5G"}],"station_info":[],"child_devices":[]}]}; 	
-//		var object_json={"device_name":"EasyMesh_Device","ip_addr":"192.168.1.10","mac_address":"d05157b22e3d","neighbor_devices":[{"neighbor_mac":"00e04c8199c1","neighbor_name":"EasyMesh_Device","neighbor_rssi":"18","neighbor_band":"5G"}],"station_info":[{"station_mac":"8cec4b7b2151","station_rssi":"100","station_connected_band":"ETHERNET","station_downlink":"0","station_uplink":"0","station_ip":"192.168.1.100","station_hostname":"lichunyi","station_brand":"Dell","station_link_time":"null"}],"child_devices":[{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.101","mac_address":"00e04c8199c1","neighbor_devices":[{"neighbor_mac":"d05157b22e36","neighbor_name":"EasyMesh_Device","neighbor_rssi":"36","neighbor_band":"ERR"}],"station_info":[],"child_devices":[{"device_name":"EasyMesh_Device","ip_addr":"192.168.1.102","mac_address":"d05157b22e36","neighbor_devices":[{"neighbor_mac":"d05157b22e21","neighbor_name":"agent_刘汉文","neighbor_rssi":"0","neighbor_band":"5G"}],"station_info":[],"child_devices":[{"device_name":"agent_刘汉文","ip_addr":"192.168.1.254","mac_address":"d05157b22e21","neighbor_devices":[],"station_info":[],"child_devices":[]}]}]}]};
 		var object_json=<%showMeshTopology()%>;
 		var interval;
 		var interval_val_time=0;
@@ -105,10 +99,6 @@
 			}else{
 				 addNode1("主设备", 'content_icon_machine.png');
 			}
-//			var upspeed_value='<%getInfo("wanUplinkRate");%>';
-//			var downspeed_value='<%getInfo("wanDownlinkRate");%>';
-//			$("#wanUplinkRate").text(upspeed_value);
-//			$("#wanDownlinkRate").text(downspeed_value);
 			$(".topo").mouseover(function(){
 				$(".topo").css("overflow","auto");
 			}).mouseout(function(){
@@ -119,63 +109,13 @@
 		function eachTime(){
 			sender();
 		}
-		
-		function send_req(){
-			//var upspeed_value='<%getInfo("wanUplinkRate");%>';
-			//var downspeed_value='<%getInfo("wanDownlinkRate");%>';
-			//var object_json=<%showMeshTopology()%>;
-			var upspeed_value,downspeed_value;
-			//$.ajax({
-			//	type:'post',
-			//	url:'',
-			//	data:{upspeed:upspeed_value,downspeed:downspeed_value},
-			//	success:function(data){
-			//		console.log(data);
-			//	}
-			//})
-		  	//})
-		}
 		var canvas = document.getElementById('canvas');  
     	var stage = new JTopo.Stage(canvas);//创建舞台对象 
     	stage.setCenter(500, 0);
     	var scene = new JTopo.Scene(stage);  //创建场景对象  
-//  	var container = new JTopo.Container();
-//  	var node_location=new Object();
-//  	var node_locationList=[];
-//  	var node_message=new Object();
-//  	var node_messageList=[];
-//  	console.log(container);
-//          // 流式布局（水平、垂直间隔均为10)
-//         var flowLayout = JTopo.Layout.FlowLayout();
-//          //容器布局样式----流式布局
-//          container.layout = flowLayout;
-//          container.width=22;
-//          container.height=22;   
-//          container.borderRadius=12;
-//          container.shadow= false;
-//          container.showSelected=false;
-////          container.shadowColor: "rgba(0,0,0,0.5)"
-//			container.shadowOffsetX= 0;
-//			container.shadowOffsetY= 0;
-//			container.text="更多";
-//			container.font= "8px";
-//			container.fontColor="255,255,255";
-//			container.textOffsetX= 0;
-//			container.textOffsetY= -26;
-//			container.fillColor="244,195,30";
-//			container.alpha=1;
-//			container.x=500;
-//			container.y=0;
-//          scene.add(container);
-//          container.click(function(){
-//          	alert(11111111111);
-//          })
-	
 			 //加节点  
 		    function addNode1(name,mac,img,alarm,x,y){ 
 		   	 	var node=new JTopo.Node(); 
-//		   	 	var aaa=node.x;
-//		   	 	console.log(aaa);
 		   	 	var aaa=node;
 		        node.fontColor = '77,77,77';
 		        node.setImage('img/'+img); 
@@ -208,18 +148,6 @@
 		        node.mouseout(function(){
 		            this.text = "";
 		        });
-//		        var _x,_y;
-//		        for(var i in aaa){
-////		        	console.log(node[i]);
-//		        	_x=node["x"];
-//		        	_y=node["y"];
-//		        }
-//		        node_location={
-//		        		x:_x,
-//		        		y:_y
-//		        }
-//		        node_locationList.push(node_location);
-//		        console.log(node_locationList);
 		        
 		        scene.add(node); 
 		        return node; 
@@ -273,7 +201,7 @@
 									    }else{
 									    	length2=0;
 									    }
-						      	  	  	var node = addNode1(row["device_name"],treeNodeList["mac_address"],'content_icon_machine_blue@2x.png',length2,300,0);
+						      	  	  	var node = addNode1(row["device_name"],row["mac_address"],'content_icon_machine_blue@2x.png',length2,300,0);
 							      		node.addEventListener("click", function(event){
 				 						    GetDevStatus();
 				 						});
@@ -289,7 +217,7 @@
 											    }else{
 											    	length3=0;
 											    }
-						                		var node1 = addNode1(row1["device_name"],treeNodeList["mac_address"],'content_icon_machine_blue@2x.png',length3,400,200); 
+						                		var node1 = addNode1(row1["device_name"],row1["mac_address"],'content_icon_machine_blue@2x.png',length3,400,200); 
 							                    node1.addEventListener("click", function(event){
 						 						    GetDevStatus();
 						 						});
@@ -305,7 +233,7 @@
 													    }else{
 													    	length4=0;
 													    }
-							              				var node2 = addNode1(row2["device_name"],treeNodeList["mac_address"],'content_icon_machine_blue@2x.png',length4,500,300); 
+							              				var node2 = addNode1(row2["device_name"],row2["mac_address"],'content_icon_machine_blue@2x.png',length4,500,300); 
 									                    node2.addEventListener("click", function(event){
 								 						    GetDevStatus();
 								 						});

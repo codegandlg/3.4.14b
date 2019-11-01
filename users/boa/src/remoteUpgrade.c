@@ -245,6 +245,7 @@ char * httpGet(const char *url)
     socketFd =  httpTcpClientCreate(hostAddr,port);
     if(socketFd < 0){
         printf("httpTcpclientCreate failed\n");
+        remoteUpgradeInfo.firmwareCheckStatus=FIRMWARE_ERROR_NETWORK_UNREACHABLE;
         return NULL;
     }
  
@@ -252,6 +253,7 @@ char * httpGet(const char *url)
  
     if(httpTcpClientSend(socketFd,recvBuf,strlen(recvBuf)) < 0){
         printf("httpCcpclientSend failed..\n");
+        upgradeInit(remoteUpgradeInfo);
         return NULL;
     }
 	printf("send request:\n%s\n",recvBuf);
@@ -296,9 +298,9 @@ remoteUpgrade_t getUpgradeFileInfo(remoteUpgrade_t fileInfo,char *recvData)
      free(jsonData);
    return fileInfo;
 }
-int upgradeInit(remoteUpgrade_t fileInfo)
+int upgradeInit(remoteUpgrade_t *fileInfo)
 {
- memset(&fileInfo,0,sizeof(remoteUpgrade_t));
+ memset(fileInfo,0,sizeof(remoteUpgrade_t));
  return 0;
 }
 
@@ -420,7 +422,7 @@ int app_performUpgrade()
 	return 0;
 }
 
-static firmreCheck_t getUpgradeFile(const char *url,const char *md5) {
+firmreCheck_t getUpgradeFile(const char *url,const char *md5) {
     FILE *fp = NULL;
 	char *ptr = NULL;
     char buf[128];
@@ -1030,7 +1032,7 @@ void remoteChekUpgrade()
  char *recvDataPtr=NULL;
  char requestUrl[128]={0};
  int ret=0;
- upgradeInit(remoteUpgradeInfo);
+ upgradeInit(&remoteUpgradeInfo);
  getFileRequestUrl(requestUrl);
  recvDataPtr=httpGet(requestUrl);
  if(NULL==recvDataPtr)

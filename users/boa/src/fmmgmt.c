@@ -45,6 +45,8 @@
 #if defined(POWER_CONSUMPTION_SUPPORT)
 #include "powerCon.h"
 #endif
+#include "slaveUpgrade.h"
+#include "remoteUpgrade.h"
 
 #define DEFAULT_GROUP		"administrators"
 #define ACCESS_URL		"/"
@@ -56,6 +58,7 @@
 #endif
 
 #define MAX_L2_LIST_NUM    256
+#define UPGRADE_COUNT_DOWN_SEC    140
 
 extern int Decode(unsigned char *ucInput, unsigned int inLen, unsigned char *ucOutput);
 
@@ -3439,9 +3442,9 @@ void formUpload(request *wp, char * path, char * query)
 #endif
 
 #ifdef REBOOT_CHECK
-	sprintf(lastUrl,"%s","/status.htm");
+	sprintf(lastUrl,"%s","/softwareup.html");
 	sprintf(okMsg,"%s",tmpBuf);
-	countDownTime = Reboot_Wait;
+	countDownTime = UPGRADE_COUNT_DOWN_SEC;
 	send_redirect_perm(wp, COUNTDOWN_PAGE);
 #else
 	OK_MSG_FW(tmpBuf, submitUrl,Reboot_Wait,lan_ip);
@@ -3481,6 +3484,7 @@ void formRemoteUp(request *wp, char * path, char * query)
 ret_upload:
 	Reboot_Wait=0;
 #endif
+    
 	ERR_MSG(tmpBuf);
 }
 
@@ -7969,14 +7973,16 @@ int getMacIdx(RTK_LAN_DEVICE_INFO_T *devinfo, unsigned char mac[6], int max_num)
 	return max_num;
 }
 
+extern void getSlaveVersion(char targetVersion[], char* mac);
+
 void addExtStationInfoToTopology(cJSON * obj, RTK_LAN_DEVICE_INFO_T *devinfo)
 {
     cJSON *head;
     cJSON *pos;
-    cJSON *station_mac;
+    cJSON *station_mac;  
     unsigned char mac[6];
     int idx;
-    char buf[20];
+    char buf[50];
 
     head = cJSON_GetObjectItem(obj, "mac_address");
     if(head != NULL)
@@ -7990,7 +7996,10 @@ void addExtStationInfoToTopology(cJSON * obj, RTK_LAN_DEVICE_INFO_T *devinfo)
             }
         }
     }
-    
+
+	strncpy(buf, fwVersion, sizeof(buf));
+	getSlaveVersion(buf, head->valuestring);
+    cJSON_InsertStringToObject(obj, 3, "device_version", buf);
     head = cJSON_GetObjectItem(obj, "station_info");
     if(head != NULL)
     {
@@ -8043,6 +8052,7 @@ void addExtStationInfoToTopology(cJSON * obj, RTK_LAN_DEVICE_INFO_T *devinfo)
        "device_name":"EasyMesh_Device_host",
        "ip_addr":"192.168.1.211",
        "mac_address":"cc2d2110f0dc",
+       "device_version":"WM V1.0.5"
        "neighbor_devices":[
            {
                "neighbor_mac":"00e046614455",
@@ -8115,6 +8125,7 @@ cJSON *getMeshTopologyJSON()
         mac = (unsigned char *)hwaddr.sa_data;
 		sprintf(buf,"%02x%02x%02x%02x%02x%02x",mac[0], mac[1],mac[2], mac[3], mac[4], mac[5]);
         cJSON_AddStringToObject(root, "mac_address", buf);
+        cJSON_AddStringToObject(root, "device_version", fwVersion);
         DTRACE(DTRACE_ASP_FMMGMT, "getMeshTopologyJSON run ok.\n");
         cJSON_AddItemToObject(root, "neighbor_devices", cJSON_CreateArray());
         DTRACE(DTRACE_ASP_FMMGMT, "getMeshTopologyJSON run ok.\n");
@@ -8668,5 +8679,524 @@ SET_ERR:
         return ;
 }
 
+#define MAX_UPLOAD_VAR_LEN     1000
+
+char* getUploadVar(char *upload_data, const char *var, char *default_value)
+{
+    char *ptr;
+    char buf[256];
+    int i;
+    char *value;
+
+	if (upload_data == NULL) 
+    {
+		return default_value;
+	}
+    sprintf(buf, "Content-Disposition: form-data; name=\"%s\"\r\n\r\n", var);
+    DTRACE(DTRACE_UPGRADE, "find str = %s\n", buf);
+	ptr = strstr(upload_data, buf);
+	if (ptr == NULL)
+    {
+        DTRACE(DTRACE_UPGRADE, "not find.\n");
+		return default_value;
+	}
+	else 
+    {
+        ptr += strlen(buf);
+        for(i = 0; i < MAX_UPLOAD_VAR_LEN; i++)
+        {
+            if(ptr[i] == '\r'|| ptr[i] == '\n')
+            {
+                break;
+            }
+        }
+        if(i  >= MAX_UPLOAD_VAR_LEN || i == 0)
+        {
+            DTRACE(DTRACE_UPGRADE, "value str len out of limit. i = %d.\n", i);
+            return default_value;
+        }
+       
+    	value= (char *)malloc(i+1);
+        if(value != NULL)
+        {
+            memcpy(value, ptr, i);
+        	value[i] = 0;
+        	addTempStr(value);
+            DTRACE(DTRACE_UPGRADE, "value = %s .\n", value);
+        	return value; //this buffer will be free by freeAllTempStr().
+    	}
+        else
+        {
+            DPrintf("malloc fail. i = %d.\n", i);
+            return default_value;
+        }
+	}
+}
+
+void formUpgradeSlave(request *wp, char * path, char * query)
+{
+	//int fh;
+	int len;
+	int locWrite;
+	int numLeft;
+	//int numWrite;
+	IMG_HEADER_Tp pHeader;
+	char tmpBuf[200];
+#ifndef REBOOT_CHECK
+	char lan_ip_buf[30];
+	char lan_ip[30];
+#endif
+	char *submitUrl;
+	int flag=0, startAddr=-1;
+	int isIncludeRoot=0;
+#ifndef NO_ACTION
+	//int pid;
+#endif
+	int head_offset=0;
+	int update_fw=0, update_cfg=0;
+    char *ip_addr;
+	//Support WAPI/openssl, the flash MUST up to 4m
+/*
+#if defined(CONFIG_RTL_WAPI_SUPPORT) || defined(HTTP_FILE_SERVER_SUPPORTED)
+	int fwSizeLimit = 0x400000;
+#elif defined( CONFIG_RTK_VOIP )
+	int fwSizeLimit = 0x400000;
+#else
+	int fwSizeLimit = 0x200000;
+#endif
+*/
+	int fwSizeLimit = CONFIG_FLASH_SIZE;
+	unsigned char isValidfw = 0;
+
+#if defined(CONFIG_APP_FWD)
+#define FWD_CONF "/var/fwd.conf"
+	int newfile = 1;
+	extern int get_shm_id();
+	extern int clear_fwupload_shm();
+	int shm_id = get_shm_id();	
+#endif
+
+#ifdef CONFIG_APP_TR069
+    /*   
+     * According to TR-098 spec of InternetGatewayDevice.ManagementServer.UpgradesManaged:
+     *      Indicates whether or not the ACS will manage upgrades for the CPE. 
+     *      If true(1), the CPE SHOULD NOT use other means other than the ACS to seek out available upgrades. 
+     *      If false(0), the CPE MAY use other means for this purpose.
+     */
+    int value = 0;
+    apmib_get(MIB_CWMP_ACS_UPGRADESMANAGED, (void *)&value);
+    if(1==value)
+    {
+    	printf("[%s:%d] firmware upgrade fail due to MIB_CWMP_ACS_UPGRADESMANAGED is 1.\n", __FUNCTION__, __LINE__);
+        snprintf(tmpBuf, sizeof(tmpBuf), ("%s"), "Update Failed!<br><br>ACS has take control of device upgrade and ONLY ACS can upgrade device!<br>");
+        goto ret_upload;
+    }
+#endif
+
+#ifndef REBOOT_CHECK
+	apmib_get( MIB_IP_ADDR,  (void *)lan_ip_buf) ;
+	sprintf(lan_ip,"%s",inet_ntoa(*((struct in_addr *)lan_ip_buf)) );
+#endif
+	
+	
+	//fprintf(stderr,"####%s:%d submitUrl=%s###\n",  __FILE__, __LINE__ , submitUrl);
+	//support multiple image
+	head_offset = find_head_offset((char *)wp->upload_data);
+	//fprintf(stderr,"####%s:%d %d wp->upload_data=%p###\n",  __FILE__, __LINE__ , head_offset, wp->upload_data);
+	//fprintf(stderr,"####%s:%d content_length=%s###contenttype=%s###\n",  __FILE__, __LINE__ ,wp->content_length , wp->content_type);
+	if (head_offset == -1) {
+		strcpy(tmpBuf, "<b>Invalid file format3!");
+		goto ret_upload;
+	}
+
+	while ((head_offset+sizeof(IMG_HEADER_T)) <  wp->upload_len) {
+		locWrite = 0;
+		pHeader = (IMG_HEADER_Tp) &wp->upload_data[head_offset];
+		len = pHeader->len;
+#ifdef _LITTLE_ENDIAN_
+		len  = DWORD_SWAP(len);
+#endif    
+		numLeft = len + sizeof(IMG_HEADER_T);
+		// check header and checksum
+		if (!memcmp(&wp->upload_data[head_offset], FW_HEADER, SIGNATURE_LEN) ||
+		    !memcmp(&wp->upload_data[head_offset], FW_HEADER_WITH_ROOT, SIGNATURE_LEN)) {
+		    	isValidfw = 1;
+			flag = 1;
+			//Reboot_Wait = Reboot_Wait+ 50;
+		} else if (!memcmp(&wp->upload_data[head_offset], WEB_HEADER, SIGNATURE_LEN)) {
+			isValidfw = 1;
+			flag = 2;
+			//Reboot_Wait = Reboot_Wait+ 40;
+		} else if (!memcmp(&wp->upload_data[head_offset], ROOT_HEADER, SIGNATURE_LEN)) {
+			isValidfw = 1;
+			flag = 3;
+			//Reboot_Wait = Reboot_Wait+ 60;
+			isIncludeRoot = 1;	
+		}else if ( 
+#ifdef COMPRESS_MIB_SETTING
+				!memcmp(&wp->upload_data[head_offset], COMP_HS_SIGNATURE, COMP_SIGNATURE_LEN) ||
+				!memcmp(&wp->upload_data[head_offset], COMP_DS_SIGNATURE, COMP_SIGNATURE_LEN) ||
+				!memcmp(&wp->upload_data[head_offset], COMP_CS_SIGNATURE, COMP_SIGNATURE_LEN)
+#else
+				!memcmp(&wp->upload_data[head_offset], CURRENT_SETTING_HEADER_TAG, TAG_LEN) ||
+				!memcmp(&wp->upload_data[head_offset], CURRENT_SETTING_HEADER_FORCE_TAG, TAG_LEN) ||
+				!memcmp(&wp->upload_data[head_offset], CURRENT_SETTING_HEADER_UPGRADE_TAG, TAG_LEN) ||
+				!memcmp(&wp->upload_data[head_offset], DEFAULT_SETTING_HEADER_TAG, TAG_LEN) ||
+				!memcmp(&wp->upload_data[head_offset], DEFAULT_SETTING_HEADER_FORCE_TAG, TAG_LEN) ||
+				!memcmp(&wp->upload_data[head_offset], DEFAULT_SETTING_HEADER_UPGRADE_TAG, TAG_LEN) ||
+				!memcmp(&wp->upload_data[head_offset], HW_SETTING_HEADER_TAG, TAG_LEN) ||
+				!memcmp(&wp->upload_data[head_offset], HW_SETTING_HEADER_FORCE_TAG, TAG_LEN) ||
+				!memcmp(&wp->upload_data[head_offset], HW_SETTING_HEADER_UPGRADE_TAG, TAG_LEN) 
+#endif
+			) {
+#if 1
+			strcpy(tmpBuf, ("<b>Invalid file format! Should upload fireware but not config dat!"));
+			goto ret_upload;
+#else
+#ifdef COMPRESS_MIB_SETTING
+				COMPRESS_MIB_HEADER_Tp pHeader_cfg;
+				pHeader_cfg = (COMPRESS_MIB_HEADER_Tp)&wp->upload_data[head_offset];
+				if(!memcmp(&wp->upload_data[head_offset], COMP_CS_SIGNATURE, COMP_SIGNATURE_LEN)) {
+					head_offset +=  pHeader_cfg->compLen+sizeof(COMPRESS_MIB_HEADER_T);
+					configlen = head_offset;
+				}
+				else {
+					head_offset +=  pHeader_cfg->compLen+sizeof(COMPRESS_MIB_HEADER_T);
+				}
+#else
+#ifdef HEADER_LEN_INT
+				if(!memcmp(&wp->upload_data[head_offset], HW_SETTING_HEADER_TAG, TAG_LEN) ||
+				!memcmp(&wp->upload_data[head_offset], HW_SETTING_HEADER_FORCE_TAG, TAG_LEN) ||
+				!memcmp(&wp->upload_data[head_offset], HW_SETTING_HEADER_UPGRADE_TAG, TAG_LEN))
+				{
+					HW_PARAM_HEADER_Tp phwHeader_cfg;
+					phwHeader_cfg = (HW_PARAM_HEADER_Tp)&wp->upload_data[head_offset];
+					head_offset +=  phwHeader_cfg->len+sizeof(HW_PARAM_HEADER_T);
+				}
+				else
+#endif
+				{
+					PARAM_HEADER_Tp pHeader_cfg;
+					pHeader_cfg = (PARAM_HEADER_Tp)&wp->upload_data[head_offset];
+					head_offset +=  pHeader_cfg->len+sizeof(PARAM_HEADER_T);
+				}
+#endif
+				isValidfw = 1;
+				update_cfg = 1;
+				continue;
+#endif
+		}
+		else {
+			if (isValidfw == 1)
+				break;
+			strcpy(tmpBuf, "<b>Invalid file format4!");
+			goto ret_upload;
+		}
+
+		if (len > fwSizeLimit) { //len check by sc_yang
+			sprintf(tmpBuf, "<b>Image len exceed max size 0x%x ! len=0x%x</b><br>",fwSizeLimit, len);
+			goto ret_upload;
+		}
+#ifdef CONFIG_RTL_WAPI_SUPPORT
+		if((flag == 3) && (len>WAPI_AREA_BASE)) {
+			sprintf(tmpBuf, "<b>Root image len 0x%x exceed 0x%x which will overwrite wapi area at flash ! </b><br>", len, WAPI_AREA_BASE);
+			goto ret_upload;
+		}
+#endif
+		if ( (flag == 1) || (flag == 3)) {
+			if ( !fwChecksumOk((char *)&wp->upload_data[sizeof(IMG_HEADER_T)+head_offset], len)) {
+				sprintf(tmpBuf, "<b>Image checksum mismatched! len=0x%x, checksum=0x%x</b><br>", len,
+					*((unsigned short *)&wp->upload_data[len-2]) );
+				goto ret_upload;
+			}
+		}
+		else {
+			char *ptr = (char *)&wp->upload_data[sizeof(IMG_HEADER_T)+head_offset];
+			if ( !CHECKSUM_OK((unsigned char *)ptr, len) ) {
+				sprintf(tmpBuf, "<b>Image checksum mismatched! len=0x%x</b><br>", len);
+				goto ret_upload;
+			}
+		}
+#ifdef HOME_GATEWAY
+#ifdef REBOOT_CHECK
+		sprintf(tmpBuf, "Upload successfully (size = %d bytes)!<br><br>Firmware update in progress.", wp->upload_len);
+#else
+		sprintf(tmpBuf, "Upload successfully (size = %d bytes)!<br><br>Firmware update in progress.<br> Do not turn off or reboot the AP during this time.", wp->upload_len);
+#endif
+#else
+		sprintf(tmpBuf, "Upload successfully (size = %d bytes)!<br><br>Firmware update in progress.<br> Do not turn off or reboot the AP during this time.", wp->upload_len);
+#endif
+		//sc_yang
+		head_offset += len + sizeof(IMG_HEADER_T);
+		startAddr = -1 ; //by sc_yang to reset the startAddr for next image
+		update_fw = 1;
+	} //while //sc_yang    
+
+    ///////TEST/////////////
+    int map_state;
+    int first_head_offset;
+    
+    apmib_get(MIB_MAP_CONTROLLER, (void *)&map_state);
+    if(map_state == 1)
+    {
+        submitUrl = getUploadVar((char *)wp->upload_data, "submit-url", "");
+        ip_addr = getUploadVar((char *)wp->upload_data, "ip_addr", "");
+   
+        first_head_offset = find_head_offset((char *)wp->upload_data);
+        if (first_head_offset == -1) 
+        {
+    		strcpy(tmpBuf, "<b>Invalid file format3!");
+    		goto ret_upload;
+	    }
+        
+#ifdef _LITTLE_ENDIAN_
+		len  = DWORD_SWAP(len);
+#endif   
+        if(ip_addr[0])
+        {
+            if(SendFileToSlave(&wp->upload_data[first_head_offset], head_offset - first_head_offset, ip_addr, 80)>0)
+            {
+
+                sprintf(tmpBuf, "send file ok!file size = %d", head_offset - first_head_offset);
+                
+                sprintf(lastUrl,"%s","/softwareup.html");
+            	sprintf(okMsg,"%s",tmpBuf);
+            	countDownTime = UPGRADE_COUNT_DOWN_SEC;
+            	send_redirect_perm(wp, COUNTDOWN_PAGE);
+            }
+            else
+            {
+                sprintf(tmpBuf, "download fail!", head_offset - first_head_offset);
+                ERR_MSG(tmpBuf);
+            }
+        }
+        else
+        {
+            sprintf(tmpBuf, "ip addr not find!");
+            ERR_MSG(tmpBuf);
+        }
+#if defined(CONFIG_APP_FWD)		
+	clear_fwupload_shm(shm_id);
+#endif
+        return;
+    }
+    ////////////////////////
+
+    sprintf(tmpBuf, "file send ok.");
+    ERR_MSG(tmpBuf);
+    //req_flush(wp);
+    //sleep(1);
+	//isFWUPGRADE = 1;
+	isREBOOTASP=1;
+	isFWUPGRADE=2;
+    isCountDown = 2;
+	//system("ifconfig br0 down");
+	//sleep(1);
+
+//#if defined(CONFIG_DOMAIN_NAME_QUERY_SUPPORT)
+//	Stop_Domain_Query_Process();
+//	WaitCountTime=2;
+//#endif
+//
+//#if defined(CONFIG_RTL_819X)
+//#ifdef RTL_8367R_DUAL_BAND
+//	Reboot_Wait = (wp->upload_len/69633)+57+5+15;
+//#elif defined(RTL_8367R_8881a_DUAL_BAND)
+//	Reboot_Wait = (wp->upload_len/69633)+57+5+25;
+//#elif defined(CONFIG_RTL_8198C)
+//	Reboot_Wait = (wp->upload_len/19710)+50+5;
+//#else
+//	Reboot_Wait = (wp->upload_len/69633)+57+5;
+//#endif
+//	if (update_cfg==1 && update_fw==0) {
+//		strcpy(tmpBuf, "<b>Update successfully!");
+//		Reboot_Wait = (wp->upload_len/69633)+45+5;
+//		isCFG_ONLY= 1;
+//	}
+//#else
+//	Reboot_Wait = (wp->upload_len/43840)+35;
+//	if (update_cfg==1 && update_fw==0) {
+//		strcpy(tmpBuf, "<b>Update successfully!");
+//		Reboot_Wait = (wp->upload_len/43840)+30;
+//		isCFG_ONLY= 1;
+//	}
+//#endif
+//
+//#ifdef REBOOT_CHECK
+//	sprintf(lastUrl,"%s","/status.htm");
+//	sprintf(okMsg,"%s",tmpBuf);
+//	countDownTime = Reboot_Wait;
+//	send_redirect_perm(wp, COUNTDOWN_PAGE);
+//#else
+//	OK_MSG_FW(tmpBuf, submitUrl,Reboot_Wait,lan_ip);
+//#endif
+	return;
+
+ret_upload:
+	
+#if defined(CONFIG_APP_FWD)		
+	clear_fwupload_shm(shm_id);
+#endif
+	Reboot_Wait=0;
+	ERR_MSG(tmpBuf);
+}
+
+void formRemoteUpgradeSlave(request *wp, char *path, char *query)
+{
+    char *str_val = NULL;
+    char *ip_addr;
+    char tmp_buf[200];
+    int ret;
+
+    ip_addr = req_get_cstream_var(wp, "ip_addr", "");
+    if(ip_addr[0])
+    {
+        ret = SlaveStartRemoteUpgrade(ip_addr, 80);
+        if(ret > 0)
+        {
+
+            sprintf(tmp_buf, "upgrade ok!");
+            
+            sprintf(lastUrl,"%s","/softwareup.html");
+        	sprintf(okMsg,"%s",tmp_buf);
+        	countDownTime = UPGRADE_COUNT_DOWN_SEC;
+        	send_redirect_perm(wp, COUNTDOWN_PAGE);
+            return;
+        }
+        else
+        {
+            if(ret == -1)
+            {
+                sprintf(tmp_buf, "network unreachable!");
+            }
+            else if(ret == -2)
+            {
+                sprintf(tmp_buf, "file path no firmware!");
+            }
+            else if(ret == -3)
+            {
+                sprintf(tmp_buf, "firmware check fail!");
+            }
+            else if(ret == -5)
+            {
+                sprintf(tmp_buf, " you are the latest version!");
+            }
+            else
+            {
+                sprintf(tmp_buf, "download fail!");
+            }
+        }
+    }
+    else
+    {
+        sprintf(tmp_buf, "ip addr not find!");
+    }
+
+ERR_RET:
+    ERR_MSG(tmp_buf);    
+    return;
+}
+
+extern remoteUpgrade_t remoteUpgradeInfo;
+
+void formRemoteUpgradeMaster(request *wp, char *path, char *query)
+{
+    char tmp_buf[200];
+    int ret;
+
+    remoteChekUpgrade();
+    if(remoteUpgradeInfo.checkVersionStatus == 1)
+    {
+        ret = getUpgradeFile(remoteUpgradeInfo.downloadUrl,remoteUpgradeInfo.md5);
+        if(ret == FIRMWARE_VALID)
+        {
+            remoteUpgradeInfo.upgradeConfirm=1;
+            isFWUPGRADE = 1;
+            
+            sprintf(tmp_buf, "upgrade ok!");
+            
+            sprintf(lastUrl,"%s","/softwareup.html");
+        	sprintf(okMsg,"%s",tmp_buf);
+        	countDownTime = UPGRADE_COUNT_DOWN_SEC;
+        	send_redirect_perm(wp, COUNTDOWN_PAGE);
+            return;
+        }
+        else if(ret == FIRMWARE_ERROR_NETWORK_UNREACHABLE)
+        {
+            sprintf(tmp_buf, "network unreachable!");
+        }
+         else if(ret == FIRMWARE_ERROR_FILE_PATH_NO_FIRMRE)
+        {
+            sprintf(tmp_buf, "file path no firmware");
+        }
+        else if(ret == 0)
+        {
+            sprintf(tmp_buf, "firmware check fail!");
+        }
+        else
+        {
+            sprintf(tmp_buf, "download fail!");
+        }
+    }
+    else
+    {
+        sprintf(tmp_buf, "you are the latest version!");
+    }
+    
+setErr:
+        ERR_MSG(tmp_buf);
+}
+
+void formRemoteUpgrade(request *wp, char *path, char *query)
+{
+    char *str_val = NULL;
+    char tmp_buf[200];
+    int ret;
+
+    str_val = req_get_cstream_var(wp, "cmd", "");
+    if (!strcmp(str_val, "1"))
+    {
+        remoteChekUpgrade();
+        if(remoteUpgradeInfo.checkVersionStatus == 1)
+        {
+            ret = getUpgradeFile(remoteUpgradeInfo.downloadUrl,remoteUpgradeInfo.md5);
+            if(ret == FIRMWARE_VALID)
+            {
+                sprintf(tmp_buf, "err_code=0");
+                ERR_MSG(tmp_buf);
+                req_flush(wp);
+                prepareFirmware(LOCATION_FILE_PATH);
+                return;
+            }
+            else if(ret == FIRMWARE_ERROR_NETWORK_UNREACHABLE)
+            {
+                sprintf(tmp_buf, "err_code=1");
+            }
+             else if(ret == FIRMWARE_ERROR_FILE_PATH_NO_FIRMRE)
+            {
+                sprintf(tmp_buf, "err_code=2");
+            }
+            else if(ret == 0)
+            {
+                sprintf(tmp_buf, "err_code=3");
+            }
+            else
+            {
+                sprintf(tmp_buf, "err_code=4");
+            }
+        }
+        else
+        {
+            sprintf(tmp_buf, "err_code=5");
+        }
+    }
+	else
+	{
+       sprintf(tmp_buf, "err_code=6");
+	}
+    
+setErr:
+        ERR_MSG(tmp_buf);
+}
 
 

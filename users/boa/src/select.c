@@ -246,20 +246,19 @@ void loop(int server_s)
             {
 			process_requests(server_s);
             }
-           if((remoteUpgradeInfo.uploadRequest)) 
-		   {
-		   // remoteChekUpgrade();
-		   }
-		   //printf("===================%s:%d-----version_%d confirmware_%d-----<\n",__FUNCTION__,__LINE__,remoteUpgradeInfo.checkVersionStatus,remoteUpgradeInfo.upgradeConfirm);
-		   if((remoteUpgradeInfo.checkVersionStatus)&&(remoteUpgradeInfo.upgradeConfirm))   
-		   {
-		    performUpgrade();
-            }
 			continue;
 		}
 
 ToUpgrade:
 		printf("ToUpgrade\n");
+        if((remoteUpgradeInfo.checkVersionStatus)&&(remoteUpgradeInfo.upgradeConfirm))   
+        {
+            prepareFirmware(LOCATION_FILE_PATH);
+            isFWUPGRADE=0;
+            isREBOOTASP=0;
+            remoteUpgradeInfo.upgradeConfirm = 0;
+            break;
+        }
 #ifdef RTK_MESH_CONFIG
 		#include <sys/shm.h>
 		#include <signal.h>

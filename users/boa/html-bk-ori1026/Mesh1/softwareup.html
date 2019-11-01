@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title></title>
+		<meta id="i18n_pagename" content="index-common">
+	    <meta name="keywords" content=""/>
+	    <meta name="description" content=""/>
+	    <meta http-equiv="Access-Control-Allow-Origin" content="*">
+		<link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.min.css"/>
+		<link rel="stylesheet" type="text/css" href="css/libs/font-awesome.css"/>		 
+		<link rel="stylesheet" href="css/bootstrap-table.css" />
+		<link rel="stylesheet" type="text/css" href="css/base.css"/>
+		<link rel="stylesheet" href="css/main.css" />
+		<link rel="stylesheet" href="css/progress.css" />
+		<link type="image/x-icon" href="img/favicon.png" rel="shortcut icon"/>
+		<script type="text/javascript" src="util_gw.js"> </script>
+		<script type="text/javascript" src="js/countDown.js"> </script>
+	</head>
+	<style type="text/css">
+		.terminal_content,.group_terminal,.panel-default{
+			border: none;
+		}
+		#tableL0{
+			border: 1px solid #CCCCCC;
+		}
+		.table-link{
+			background: #CCCCCC;
+			border-radius: 4px;
+			border: none;
+		}
+		.fileupload_button{
+			width: 100px;
+		}
+		.modal-footer{
+			padding: 15px;
+			padding-left: 40%;
+			text-align: left;
+			border-top: none;
+		}
+		.connect_status2{
+			float: left;
+			top: -1px;
+			left: 0;
+			display: inline-block;
+			margin-right: 10px;
+		}
+		.upware{
+			background: #89CEED;
+			color: #FFFFFF;
+		}
+	</style>
+	<body>
+		 		<div class="main_content">
+		 			<div class="terminal_content">
+		 				<div id="up_tips"><div class="connect_status2"></div><span class="i18n" name="currect_ver"></span></div>
+						<div class="form-group_smart vm_version"><label class="i18n" name="version_softwareup"></label><span class="fwversion"><% getInfo("fwVersion"); %></span></div>
+						<div id="up_tips2"><div class="connect_status2"></div><span class="i18n" name="currect_ver2"></span></div>
+						<div class="form-group_smart softup_content_mes">
+							<label class="i18n fwversion_label" name="version_softwareup_n"></label><span class="ver_message fwversion"></span>
+						</div>
+		 				<div class="group_terminal">
+		 					<div class="panel panel-default" style="border-radius: 0;">
+		 						<div class="panel-body table-responsive">
+		 							<table class="table table-striped table-bordered table-hover" id="tableL0">
+		 							</table>
+		 						</div>
+		 					</div>
+		 				</div>
+					</div>
+		 		</div>
+		 		<form method="post" action="boafrm/formUpload" enctype="multipart/form-data" name="upload">
+		 			<span style="display: none;">主机升级</span>
+		 			<input type="hidden" value="/softwareup.html" name="submit-url">
+		 			<!--主机本地升级--><!--start-->
+		 			<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+			 			<div class="modal-dialog" style="width: 600px;">
+					        <div class="modal-content">
+					            <div class="modal-header">
+					                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					                <h4 class="modal-title i18n" id="myModalLabel" name="time_setting_up"></h4>
+					            </div>
+					            <div class="modal-body">			            	
+					            	<div class="test"><span class="test_new i18n" name="test_new_zhu"></span></div>
+									<div class="tips"><p class="i18n" name="tips_for_softwareup"></p></div>
+									<div class="soft_up_selectversion">
+										<div class="form-group_smart"><label class="i18n" name="version_softwareup"></label><input type="text" class="current_version" value="<% getInfo("fwVersion"); %>"/></div>
+										<div class="form-group_smart"><label class="i18n" name="versionLocal_softwareup"></label>
+											<input type="file" name="binary" id="file" style="display:none">
+											<div class="input-append">  
+											   <a class="btn btn-info i18n" onclick="$('input[id=file]').click();" name="fileupload_software" style="background-color: #89CEED;border-color: #89CEED;border-radius: 0;">
+											   	<i class="icon-folder-open-alt"></i> 
+											   </a>
+											   <span id="uploadurl" class="input-large" ></span>
+											</div><span class="i18n" name="Unselected_file" id="Unselected_file"></span>
+								        </div>
+									</div>
+					            </div>
+					            <div class="modal-footer">
+					                <button type="button" class="btn btn-default i18n" data-dismiss="modal" name="close"></button>
+					                <button type="button" class="btn btn-primary i18n"  value="Upload" name="send" onclick="sendClicked()"></button>
+					            </div>
+					        </div><!-- /.modal-content -->
+					    </div><!-- /.modal -->
+					    
+				   	</div>
+				   	</form>
+				   <!--主机本地升级--><!--end-->
+				   <!--主机远程升级--><!--start-->
+				   <form method="post" action="boafrm/formRemoteUp" name="upload2">
+				   	<input type="hidden" value="/softwareup.html" name="submit-url">
+				   <div class="modal fade" id="myModal2" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+			 			<div class="modal-dialog" style="width: 600px;">
+					        <div class="modal-content">
+					            <div class="modal-header">
+					                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					                <h4 class="modal-title i18n" id="myModalLabel" name="time_setting_up"></h4>
+					            </div>
+					            <div class="modal-body">			            	
+					            	
+										<div id="up_tips"><div class="connect_status2"></div><span class="i18n" name="currect_ver"></span></div>
+										<div class="form-group_smart vm_version"><label class="i18n" name="version_softwareup"></label><span class="fwversion"><% getInfo("fwVersion"); %></span></div>
+										<div id="up_tips2"><div class="connect_status2"></div><span class="i18n" name="currect_ver2"></span></div>
+										<div class="form-group_smart softup_content_mes">
+											<span class="i18n fwversion_label" name="version_softwareup_n"></span><span class="ver_message fwversion"></span>
+										</div>
+										<div class="softup_content">
+											<div class="form-group_smart"><span class="i18n" name="version_softwareup_attent"></span></div>
+											<!--<div class="form-group_smart"><span class="only_span"></span><button class="i18n" type="submit" value="Upload" name="upload_submit"></button></div>-->
+										</div>
+										
+									
+					            </div>
+					            <div class="modal-footer">
+					                <button type="button" class="btn btn-default i18n" data-dismiss="modal" name="close2"></button>
+					                <button type="button" class="btn btn-primary i18n" value="Upload" name="upload_submit" onclick="farupClick()"></button>
+					            </div>
+					        </div><!-- /.modal-content -->
+					    </div><!-- /.modal -->
+				   	</div>
+				   	
+				   	</form>
+				   	<!--主机远程升级--><!--end-->
+		 			
+		 		
+		 		<form action="/boafrm/formUpgradeSlave" method="POST" enctype="multipart/form-data" name="formUpgradeSlave">
+		 			<span style="display: none;">从机升级</span>
+		 			<input type="hidden" name="method" value="0" id="formUpgradeSlave_method"/>
+		 			<input type="hidden" name="ip_addr" value="" id="formUpgradeSlave_ip"/>
+		 			<input type="hidden" value="/softwareup.html" name="submit-url">
+		 			<!--从机本地升级--><!--start-->
+		 			<div class="modal fade" id="myModal3" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+			 			<div class="modal-dialog" style="width: 600px;">
+					        <div class="modal-content">
+					            <div class="modal-header">
+					                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					                <h4 class="modal-title i18n" id="myModalLabel" name="time_setting_up"></h4>
+					            </div>
+					            <div class="modal-body">			            	
+					            	<div class="test"><span class="test_new i18n" name="test_new_zhu"></span></div>
+									<div class="tips"><p class="i18n" name="tips_for_softwareup"></p></div>
+									<div class="soft_up_selectversion">
+										<div class="form-group_smart"><label class="i18n" name="version_softwareup"></label><input type="text" class="current_version" value="<% getInfo("fwVersion"); %>"/></div>
+										<div class="form-group_smart"><label class="i18n" name="versionLocal_softwareup"></label>
+											<input type="file" name="binary2" id="file2" style="display:none">
+											<div class="input-append">  
+											   <a class="btn btn-info i18n" onclick="$('input[id=file2]').click();" name="fileupload_software2" style="background-color: #89CEED;border-color: #89CEED;border-radius: 0;">
+											   	<i class="icon-folder-open-alt"></i> 
+											   </a>
+											   <span id="uploadurl2" class="input-large" ></span>
+											</div><span class="i18n" name="Unselected_file" id="Unselected_file2"></span>
+								        </div>
+									</div>
+					            </div>
+					            <div class="modal-footer">
+					                <button type="button" class="btn btn-default i18n" data-dismiss="modal" name="close"></button>
+					                <button type="button" class="btn btn-primary i18n"  value="Upload" name="send" onclick="sendClicked2()"></button>
+					            </div>
+					        </div><!-- /.modal-content -->
+					    </div><!-- /.modal -->
+				   	</div>
+				   	
+				   </form>
+				   <!--从机本地升级--><!--end-->
+				   <!--从机远程升级--><!--start-->
+				   <form action="/boafrm/formRemoteUpgradeSlave" method="POST" name="formRemoteUpgradeSlave">
+				   	<input type="hidden" name="method" value="1" id="formUpgradeSlave_method2"/>
+		 			<input type="hidden" name="ip_addr" value="" id="formUpgradeSlave_ip2"/>
+		 			<input type="hidden" value="/softwareup.html" name="submit-url">
+				   <div class="modal fade" id="myModal4" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+			 			<div class="modal-dialog" style="width: 600px;">
+					        <div class="modal-content">
+					            <div class="modal-header">
+					                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					                <h4 class="modal-title i18n" id="myModalLabel" name="time_setting_up"></h4>
+					            </div>
+					            <div class="modal-body">			            	
+										<div id="up_tips"><div class="connect_status2"></div><span class="i18n" name="currect_ver"></span></div>
+										<div class="form-group_smart vm_version"><label class="i18n" name="version_softwareup"></label><span class="fwversion"><% getInfo("fwVersion"); %></span></div>
+										<div id="up_tips2"><div class="connect_status2"></div><span class="i18n" name="currect_ver2"></span></div>
+										<div class="form-group_smart softup_content_mes">
+											<span class="i18n fwversion_label" name="version_softwareup_n"></span><span class="ver_message fwversion"></span>
+										</div>
+										<div class="softup_content">
+											<div class="form-group_smart"><span class="i18n" name="version_softwareup_attent"></span></div>
+										</div>
+					            </div>
+					            <div class="modal-footer">
+					                <button type="button" class="btn btn-default i18n" data-dismiss="modal" name="close2"></button>
+					                <button type="button" class="btn btn-primary i18n" value="Upload" name="upload_submit" onclick="return submitClick()"></button>
+					            </div>
+					        </div><!-- /.modal-content -->
+					    </div><!-- /.modal -->
+				   	</div>
+				   	<!--从机远程升级--><!--end-->
+		 					 			
+		 		</form>
+		<div class="popup"></div>
+		<div class="popbox window" id="center">
+			<div class="progress">
+				<div class="wrapper">
+					<div class="load-bar">
+						<div class="load-bar-inner" data-loading="0">
+							<span id="counter">1%</span></div>
+					</div>
+					<p class="i18n" name="reset_name_internet"></p>
+				</div>
+			</div>
+		</div>
+		<script src="js/jquery.js"></script>
+		<script src="js/bootstrap.js"></script>
+		<script src="js/bootstrap-table.js"></script>
+		<script src="js/jquery.cookie.js"></script>
+	    <!-- 加载语言包文件 -->
+	    <script src="js/jquery.i18n.properties.js"></script>
+	    <script src="js/language.js"></script>
+	    <script type="text/javascript">
+			var versionMessage={"remoteUprateInfo":[{"checkVersionStatus":"1","version":"VM1.0.5","remoteVersionLog":"1.1111/2.2222/3.3333"}]};
+	    	var object_json=<%showMeshTopology()%>;
+			var MWJ_progBar = 0;
+			var time=0;
+			var delay_time=1000;
+			var loop_num=0;
+			var usb_update_img_enabled=<%getIndex("usb_update_img_enabled");%>;
+			var firmware_upgrade_acs_managed = <% getIndex("firmware_acs_managed"); %>;
+			var childList_D=[];
+			var dataObject;
+			var dataObjectList=[];
+			var ver_status,ver_log,ver_version;
+			var device_verion;
+			var ip_address_up;
+	
+    		var curr_device = get_device_json(object_json);
+    		var i18nLanguage=getCookie('userLanguage');
+    		var count=1;
+    		
+    		if(i18nLanguage=='en'){
+    			var okmsg_btn = '  OK  ';
+    		}else{
+    			var okmsg_btn = '  确定  ';
+    		}
+    		
+    		//检测版本信息       start   
+	        for(var i in versionMessage){
+				ver_status=versionMessage[i][0].checkVersionStatus;
+				ver_log=versionMessage[i][0].remoteVersionLog;
+				ver_version=versionMessage[i][0].version;
+			}
+	    	if(ver_status==0){
+	    		$("#up_tips").css("display","block");
+				$(".softup_content,.softup_content_mes,#up_tips2,.vm_version").css("display","none");				
+	    	}else{
+	    		$("#up_tips,.vm_version").css("display","none");
+				$(".softup_content,.softup_content_mes,#up_tips2").css("display","block");
+				$(".ver_message").text(ver_log);
+	    	}
+	    	$(".current_version").attr("disabled",true);
+	    	//检测版本信息     end
+    		
+    		//表格
+    		//递归获取值     start
+			function get_device_json(object_json) {
+				if(object_json["device_name"]!=null||object_json["device_name"]!=undefined||object_json["device_name"]!=""){
+					var childList=object_json["device_name"];
+					childList_D.push(childList);
+					var num=childList_D.length;
+					dataObject={
+						"device_name":object_json["device_name"],
+						"ip_addr":object_json["ip_addr"],
+						"id":num,
+						"device_version":object_json["device_version"]
+					}
+					dataObjectList.push(dataObject);			    	
+				}
+				if (0 != object_json["child_devices"].length) {
+					for (var child_device in object_json["child_devices"]) {
+			            var return_object = get_device_json(object_json["child_devices"][child_device]);
+			            if (0 == return_object) {
+			                continue;
+			            } else {
+			                return return_object;
+			            }
+					}
+			   }			
+			    return 0;
+			}
+			//递归获取值     end
+			
+			//表格    start
+			$('#tableL0').bootstrapTable('destroy');   //动态加载表格之前，先销毁表格
+            	var itle2,title3,title4,title5,title6;
+				if(i18nLanguage=='en'){
+					title2="Equipment Name";title3="IP Address";title4="Local upgrade";title5="Remote upgrade";title6="Rssi";
+				}else{
+					title2="设备名称";title3="Ip地址";title4="版本信息";title5="本地升级";title6="远程升级";
+				}
+			
+				var tableColumns = [
+					{field: 'device_name', title: title2, sortable: false,formatter: function (value, row, index) {
+	                	if(value=="---"){
+	                		if(i18nLanguage=='en'){
+	                			return "Anonymous Terminal";
+	                		}else{	                			
+	                			return "匿名终端";
+	                		}
+	                		
+	                	}else{
+	                		return value;
+	                	}
+	                }},
+	                {field: 'ip_addr', title: title3, sortable: false},
+	                {field: 'device_version', title: title4, sortable: false},
+	                {field: 'localup', title: title5, sortable: false,formatter: function (value, row, index) {
+	                	if(index==0){
+	                		return '<button type="button" class="table-link upware" data-toggle="modal" data-target="#myModal">'+title5+'</button>';
+	                	}else{
+	                		
+	                		return '<button type="button" class="table-link upware" data-toggle="modal" data-target="#myModal3">'+title5+'</button>';
+	                	}	                	
+	                }},
+	                {field: 'farup', title: title6, sortable: false,formatter: function (value, row, index) {
+	                	
+//	                	var current_version=
+	                	if(index==0){
+	                		if(ver_status==0){
+	                			return '<button type="button" class="table-link" data-toggle="modal" data-target="#myModal2">'+title6+'</button>';
+	                		}else{
+	                			return '<button type="button" style="background:#0FD59D;color:#fff" class="table-link" data-toggle="modal" data-target="#myModal2" >'+title6+'</button>';
+	                		}	                		
+	                	}else{
+	                		ip_address_up=row["ip_addr"];
+	                		var version=row["device_version"];
+	                		var cur=version.substring(2).replace(/\./g,'');
+	                		var far=ver_version.substring(2).replace(/\./g,'');
+	                		if(cur>far){
+	                			return '<button type="button" disabled="disabled" class="table-link" data-toggle="modal" data-target="#myModal4" >'+title6+'</button>';
+	                		}else{
+	                			return '<button type="button" style="background:#0FD59D;color:#fff" class="table-link" data-toggle="modal" data-target="#myModal4">'+title6+'</button>';
+	                		}
+	                	}
+	                	
+	                }},
+	         	]
+				$('#tableL0').bootstrapTable({//表格初始化
+	                data:dataObjectList, //通过ajax返回的数据
+	                width:350,
+	                method: 'get',
+	                pageSize: 200,
+	                pageNumber: 1,
+	                cache: false,
+	                search: false,
+	                columns: tableColumns //表头
+	          });
+	        //表格       end
+	        
+	    	
+	    	//选择文件     start
+			$('input[id=file]').change(function() {
+				var path = $(this).val();			
+				path = path.split('\\');		
+				path = path[path.length-1];
+				$('#uploadurl').text(path);
+				if($('#uploadurl').text()){
+					$('#Unselected_file').text('');
+				}else{
+					if(i18nLanguage=='en'){
+						$('#Unselected_file').text('Unselected file');
+					}else{
+						$('#Unselected_file').text('未选择文件');
+					}
+				}
+				
+			});
+			//上传文件			
+			function getFileType(str)
+			{
+				if(str.value == "")
+					return;
+				var name = str.split(".");
+				var type = name[name.length-1];
+				return type;
+			}
+			function sendClicked()
+			{
+			  if(firmware_upgrade_acs_managed == 1)
+			  {
+			      document.upload.binary.focus();
+			      if(i18nLanguage=='en'){
+					alert('Firmware cannot be upgraded via web UI! ACS has been set up. Management server. Upgrade management is correct');
+				  }else{
+					alert('不能通过web UI升级固件！ ACS 已经设置.管理服务器.升级管理正确');
+				  }
+			      
+			      return false;
+			  }
+			  if(document.upload.binary.value == ""){
+			      	document.upload.binary.focus();
+			      	if(i18nLanguage=='en'){
+			      		alert('The filename cannot be empty');
+			      	}else{
+			      		alert('文件名不能为空');
+			      	}
+			  	
+			  	return false;
+			  }
+			  
+			  var fileType = getFileType(document.upload.binary.value);
+			  if(fileType != "bin"){      	
+			  	document.upload.binary.focus();
+			  	if(i18nLanguage=='en'){
+			      		alert('Invalid file format upload attempt');
+			      	}else{
+			      		alert('上传文件格式不正确');
+			      	}
+			  	
+			  	return false;
+			  }
+			  document.upload.submit();  
+			}
+			//选择文件      end
+			//主机 点击远程升级   start
+			function farupClick(){
+				document.upload2.submit();
+			}
+			//主机 点击远程升级   end
+			//从机远程升级   start
+			function submitClick(){
+				$("#formUpgradeSlave_method2").val("1");
+	            $("#formUpgradeSlave_ip2").val(ip_address_up);
+				document.formRemoteUpgradeSlave.submit();
+			}
+            //从机远程升级   end
+            //从机本地升级   start
+            $('input[id=file2]').change(function() {
+				var path = $(this).val();			
+				path = path.split('\\');		
+				path = path[path.length-1];
+				$('#uploadurl2').text(path);
+				if($('#uploadurl2').text()){
+					$('#Unselected_file2').text('');
+				}else{
+					if(i18nLanguage=='en'){
+						$('#Unselected_file2').text('Unselected file');
+					}else{
+						$('#Unselected_file2').text('未选择文件');
+					}
+				}
+				
+			});
+            function sendClicked2()
+			{
+			  if(firmware_upgrade_acs_managed == 1)
+			  {
+			      document.formUpgradeSlave.binary2.focus();
+			      if(i18nLanguage=='en'){
+					alert('Firmware cannot be upgraded via web UI! ACS has been set up. Management server. Upgrade management is correct');
+				  }else{
+					alert('不能通过web UI升级固件！ ACS 已经设置.管理服务器.升级管理正确');
+				  }
+			      
+			      return false;
+			  }
+			  if(document.formUpgradeSlave.binary2.value == ""){
+			      	document.formUpgradeSlave.binary2.focus();
+			      	if(i18nLanguage=='en'){
+			      		alert('The filename cannot be empty');
+			      	}else{
+			      		alert('文件名不能为空');
+			      	}
+			  	
+			  	return false;
+			  }
+			  
+			  var fileType = getFileType(document.formUpgradeSlave.binary2.value);
+			  if(fileType != "bin"){      	
+			  	document.formUpgradeSlave.binary2.focus();
+			  	if(i18nLanguage=='en'){
+			      		alert('Invalid file format upload attempt');
+			      	}else{
+			      		alert('上传文件格式不正确');
+			      	}
+			  	
+			  	return false;
+			  }
+			  $("#formUpgradeSlave_method").val("0");
+	          $("#formUpgradeSlave_ip").val(ip_address_up);
+			  document.formUpgradeSlave.submit();  
+			}
+			//从机本地升级    end
+			
+            
+            //获取cookie
+            function getCookie(name) {
+			  var cookies = document.cookie;
+			  var list = cookies.split("; ");          // 解析出名/值对列表
+			      
+			  for(var i = 0; i < list.length; i++) {
+			    var arr = list[i].split("=");          // 解析出名和值
+			    if(arr[0] == name)
+			      return decodeURIComponent(arr[1]);   // 对cookie值解码
+			  } 
+			  return "";
+			}
+
+	    </script>
+	</body>
+</html>

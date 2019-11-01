@@ -21,7 +21,7 @@ CFLAGS := -s -Wall -Os
 LDFLAGS := -s -Wall
 IFLAGS := -I. -I$(APMIB_DIR)
 
-TARGET = klinkM klinkS test
+TARGET = klinkM klinkS klinkLinksListFunc.a
 
 all: $(TARGET)
 
@@ -42,8 +42,12 @@ klinkMaster.o:klinkMaster.c
 	$(CC) -c klinkMaster.c  $(IFLAGS) -o klinkMaster.o
 klinkLinksListFunc.o:klinkLinksListFunc.c
 	$(CC) -c klinkLinksListFunc.c  $(IFLAGS) -o klinkLinksListFunc.o
-test:test.c
-	$(CC) test.c -o test 
+
+## libEntrydExt.a
+LIBENTRYDEXT=klinkLinksListFunc.a
+$(LIBENTRYDEXT): klinkLinksListFunc.o klink.h 
+	@echo "[AR] $@"
+	@$(AR) -r $@ klinkLinksListFunc.o
 	
 romfs:
 	$(ROMFSINST) $(KLINK_DIR)/klinkM /bin/

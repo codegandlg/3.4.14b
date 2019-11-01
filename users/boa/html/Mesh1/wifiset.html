@@ -9,12 +9,11 @@
 	    <meta name="keywords" content=""/>
 	    <meta name="description" content=""/>
 	    <meta http-equiv="Access-Control-Allow-Origin" content="*">
-		<link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.min.css"/>
-		<link rel="stylesheet" type="text/css" href="css/libs/font-awesome.css"/>	
+		<link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.min.css"/>	
 		<link rel="stylesheet" href="css/bootstrap-switch.min.css" />
-		<!--<link rel="stylesheet" type="text/css" href="css/compiled/theme_styles.css"/>-->
 		<link rel="stylesheet" type="text/css" href="css/base.css"/>
 		<link rel="stylesheet" href="css/main.css" />
+		<link rel="stylesheet" href="css/loading.css" />
 		<link type="image/x-icon" href="img/favicon.png" rel="shortcut icon"/>
 		<script type="text/javascript" src="js/util_gw.js"> </script>
 		<style type="text/css">
@@ -25,6 +24,9 @@
 			}
 			.form-group select{
 				margin-left: -5px;
+			}
+			.popup,.popbox{
+				display: none;
 			}
 		</style>
 		<script>
@@ -56,7 +58,10 @@
 			startChanIdx[0] = 0;
 		}
 	
-
+		<%setWlanIDX ("wlan0");%>
+		wlan_idx=0
+		<%setWlanIDX ("wlan1");%>
+		wlan_idx=1
 		// <<-------------------------------------- for WPS
 		function Data_country(country_code,abb,idx_5g,idx_2g,fullname) 
 		{
@@ -237,7 +242,7 @@
 			 				<div class="top_wifiset">
 			 					<div class="intell i18n" name="24g_5g_change_title_wifi"></div>		 					
 				 				<div class="switch_check">
-				 					<input type="checkbox" class="checkbox_switch" data-size="mini" name="autoWlanEnabled" value=""/>
+				 					<input type="checkbox" class="checkbox_switch" data-size="mini" name="autoWlanEnabled" value="" style="display: none;"/>
 				 				</div>
 						    </div>
 						    <div class="wifiset_tips">
@@ -272,8 +277,6 @@
 					 						<select id="channelbound1" name="channelbound1" onChange="update_controlsideband(document.wlanSetup, 1); showtxrate_updated(document.wlanSetup,document.wlanSetup.band1.options[document.wlanSetup.band1.selectedIndex].value, 1, <% getIndex("rf_used"); %>)">
 									     		<option value="0">20MHz</option>
 												<option value="1">40MHz</option>
-												<!--<option value="2">80MHz</option>
-												<option value="3">20/40MHz</option>-->
 												<SCRIPT>
 													use_40m = '<% getIndex("ChannelBonding"); %>';
 													document.wlanSetup.elements["channelbound" + 1].selectedIndex=use_40m;
@@ -293,7 +296,7 @@
 												regDomain[1] = <% getIndex("regDomain"); %>;
 												defaultChan[1] = <% getIndex("channel"); %>;
 											
-												wlan_channel[1] =  [1];
+												wlan_channel[1] =  defaultChan[1];
 												updateChan(document.wlanSetup, 1);
 											    </SCRIPT>	
 					 						
@@ -320,7 +323,6 @@
 					 							document.wlanSetup.pskValue1.value="<%getVirtualInfo("pskValue", "0");%>";
 					 						}
 					 					</script>
-					 					<!--<div class="form-group wpa_mixed_24g"><label class="i18n" name="encryption_key2_wifiset"></label><input class="form_input" type="password" name="wapiPskValue<% getIndex("wlan_idx"); %>" id="wapipsk" /></div>-->
 			 					</div>
 			 					<div class="rightset">
 			 						<%setWlanIDX ("wlan0");%>
@@ -350,7 +352,6 @@
 									     		<option value="0">20MHz</option>
 												<option value="1">40MHz</option>
 												<option value="2" id="hide_option" style="display: none;">80MHz</option>
-												<!--<option value="3">20/40MHz</option>-->
 												<SCRIPT>
 													use_40m =<% getIndex("ChannelBonding"); %>;
 													document.wlanSetup.elements["channelbound" + 0].selectedIndex=use_40m;
@@ -397,7 +398,6 @@
 					 							document.wlanSetup.pskValue0.value="<%getVirtualInfo("pskValue", "0");%>";
 					 						}
 					 					</script>					 						
-					 					<!--<div class="form-group wpa_mixed_5g"><label class="i18n" name="encryption_5g_key2_wifiset"></label><input class="form_input" type="password" name="wapiPskValue<% getIndex("wlan_idx"); %>"/></div>-->
 			 					</div>			 					
 			 				</div>
 			 				<div class="form-group form-group-btn">
@@ -410,7 +410,21 @@
 			 			</div>
 		 			</div>
 		 		</div>
-		
+		<div class="popup"></div>
+		<div class="popbox window" id="center">
+			<div class="loading">
+	    
+			     <p>
+			
+			  <i></i>
+			  <i></i>
+			  <i></i>
+			  <i></i>
+			  <i></i>
+			</p>
+			</div>
+			
+		</div>
 		<script src="js/jquery.js"></script>
 		<script src="js/bootstrap.js"></script>
 		<script src="js/bootstrap-switch.min.js"></script>
@@ -421,6 +435,7 @@
 	    <script src="js/language.js"></script>
 		<script type="text/javascript">
 			var globle_status;
+			
     	$(document).ready(function(){
         	$('.checkbox_switch').bootstrapSwitch({  //开关按钮
 		        onText:"",  

@@ -147,8 +147,8 @@ int init_get2(request * req)
 		}
 		else if (isCountDown == 1) {
 			isCountDown = 2;
-			system("ifconfig br0 down");
-			sleep(1);
+			//system("ifconfig br0 down");
+			//sleep(1);
 		}
 	}
 }

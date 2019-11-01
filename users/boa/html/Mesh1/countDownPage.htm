@@ -6,9 +6,7 @@
 	<meta id="i18n_pagename" content="index-common">
 	<link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.min.css"/>
 	<link rel="stylesheet" href="css/progress.css" />
-	<link type="image/x-icon" href="img/favicon.png" rel="shortcut icon"/>
-	<script type="text/javascript" src="js/mtmcode.js"></script>
-	<script type="text/javascript" src="js/util_gw.js"></script>
+	<link type="image/x-icon" href="img/favicon.png" rel="shortcut icon"/>	
 	<style>
 	.on {display:on}
 	.off {display:none}
@@ -85,7 +83,6 @@
 		
 		function do_count_down()
 		{
-			show_div(false, "close_button");
 			
 		
 			get_by_id("show_sec").innerHTML = count;
@@ -210,9 +207,7 @@
                     }else
                     {
 					var location_href = 'http://'+connect_url+lastUrl+'?t='+new Date().getTime();								
-					// parent.location.href = location_href;
 					parent.location.href = 'http://'+connect_url;
-					// parent.iframe_href=lastUrl;
                     }
 				}
 				
@@ -228,7 +223,7 @@
 		}
 	</script>
 </head>
-<body onload="change_state('normal');do_count_down();progress()">
+<body onload="change_state('normal');do_count_down();">
 	<div id="countDownPage" style="display: none;">
 		<h4 class="i18n" name="change_settings_s"></h4><br>
 		<span id="show_msg" class="i18n" name="change_settings_donot"></span>
@@ -244,15 +239,14 @@
 		<div class="progress">
 			<div class="wrapper">
 				<div class="load-bar">
-					<div class="load-bar-inner" data-loading="0">
-						<span id="counter">1%</span></div>
+					<span id="counter">0%</span>
+					<div class="load-bar-inner" data-loading="0"></div>
 				</div>
 				<p class="i18n" name="reset_name_internet"></p>
 			</div>
 		</div>
 		</div>
 	<script src="js/jquery.js"></script>
-	<script src="js/bootstrap.js"></script>
 	<script src="js/jquery.cookie.js"></script>
 	<!-- 加载语言包文件 -->
 	<script src="js/jquery.i18n.properties.js"></script>
@@ -285,28 +279,28 @@
 	     $("#center").css("top",popY).css("left",popX).slideToggle("slow");  
       }
 		
-		var interval;
+		//获取dom对象
 		var count = <% getInfo("countDownTime"); %>*1;
-		//count=count+20;
-//		var count = 20*1;
-		var count_number=1;
-			if (count_number > 0) 
-			{								
-				interval = setInterval(increment, 500);
-			}
-		
-		function increment() {			
-			count_number++;
-			count--;
-			$('#counter').html(count_number + '%');
-			if(count_number == 100||count==0) {
-//			if(count == 100) {
-				$(".progress").css("display","none");
-				clearInterval(interval);
-			}
-		}
-		
-		//进度条——end	
+		var content = document.getElementsByClassName('load-bar-inner');
+		var content2 = document.getElementById("counter");
+		content = content[0];
+		var go; //设置定时的名字
+		var flag = true; //用于判断是否点击了按钮
+		if(flag) {
+		//如果点击了就改为false
+			flag = false;
+			go = setInterval(function() {
+			    if(content.offsetWidth < 400) {
+			    	content.style.width = content.offsetWidth + 4 + 'px';
+					content2.innerHTML = parseInt(content.offsetWidth /4) + '%';
+			    	content2.style.color = '#FFFFFF';
+			    } else {
+			    	content.style.backgroundColor = '#0096F5';
+			    	clearInterval(go);
+			    }
+
+			}, count*10)
+		}//进度条——end	
 		
              
          

@@ -1,5 +1,6 @@
 # $Id: Makefile.in,v 1.59.2.15 2005/02/22 03:02:40 jnelson Exp $
-
+CUR_DIR=$(shell pwd)
+KLINK_DIR=$(CUR_DIR)/../../klink
 ifeq ($(wildcard $(DIR_LINUX)/.config),)
 include ../../../linux-2.6.30/.config
 else
@@ -79,8 +80,8 @@ EXTRA_CFLAGS =
 #------------------------------------------------------------------------------
 # Files
 #------------------------------------------------------------------------------
-REALTEK_FILES = fmtcpip.c fmfwall.c fmlinuxvlan.c utility.c fmget.c fmwlan.c fmmgmt.c version.c
-KING_SIGNAL_FILES = deviceProcIf.c remoteUpgrade.c
+REALTEK_FILES = fmtcpip.c fmfwall.c fmlinuxvlan.c utility.c fmget.c fmwlan.c klinkMgmt.c fmmgmt.c version.c
+KING_SIGNAL_FILES = deviceProcIf.c remoteUpgrade.c $(KLINK_DIR)/klinkLinksListFunc.c  slaveUpgrade.c 
 ifeq ($(CONFIG_APP_RTK_INBAND_CTL), y)
 SHOW_WAN_STATUS_FILES = showwanstatus.c utility.c 
 SHOW_WAN_STATUS_OBJS = $(SHOW_WAN_STATUS_FILES:.c=.o)
@@ -169,7 +170,7 @@ endif
 # CFLAGS
 #------------------------------------------------------------------------------
 DEBUG	= -g -Wall
-IFLAGS 	= -I. -I$(APMIB_DIR)
+IFLAGS 	= -I. -I$(APMIB_DIR) -I$(KLINK_DIR)
 CFLAGS += $(COMMON_CFLAGS) $(EXTRA_CFLAGS)
 #include $(DIR_USERS)/.config
 ifdef	CONFIG_APP_MULTIPPPOE
@@ -251,12 +252,12 @@ endif
 
 boa: Makefile $(OBJS) $(APMIB_DIR)/$(APMIB_LIB)
 ifeq ($(CONFIG_APP_BOA_WITH_OPENSSL), y)
-	$(CC) -o boa $(OBJS) $(LDFLAGS) -L$(APMIB_DIR) -lapmib -L $(SSL_PATH) $(SSL_LIBS) -ldl
+	$(CC) -o boa $(OBJS) $(LDFLAGS) $(KLINK_DIR)/klinkLinksListFunc.a -L$(APMIB_DIR) -lapmib -L $(SSL_PATH) $(SSL_LIBS) -ldl
 else
 ifeq ($(CONFIG_APP_BOA_WITH_MBEDTLS), y)
-	$(CC) -o boa $(OBJS) $(LDFLAGS) -L$(APMIB_DIR) -lapmib -L $(SSL_PATH) $(SSL_LIBS) -ldl
+	$(CC) -o boa $(OBJS) $(LDFLAGS) $(KLINK_DIR)/klinkLinksListFunc.a -L$(APMIB_DIR) -lapmib -L $(SSL_PATH) $(SSL_LIBS) -ldl
 else
-	$(CC) -o boa $(OBJS) $(LDFLAGS) -L$(APMIB_DIR) -lapmib
+	$(CC) -o boa $(OBJS) $(LDFLAGS) $(KLINK_DIR)/klinkLinksListFunc.a -L$(APMIB_DIR) -lapmib
 endif
 endif
 	$(STRIP) $@

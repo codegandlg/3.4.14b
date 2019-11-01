@@ -1,7 +1,7 @@
  /*
   * Copyright (c) 2019, All rights reserved.
   *
-  * File		 : deviceProcIf.c
+  * File		 : remoteUpgrade.h
   * Status		 : Current
   * Description  :
   *
@@ -52,6 +52,7 @@ typedef struct
     char downloadUrl[256];                   //url to download upgrade file 
     char remoteFwVersion[16];               //url to download upgrade file 
     char md5[64];
+    int checkNetStatus;
 	char versionUpdateLog[128];
 	unsigned int totalSize; 
 	int isRemoteUpgrade;                   // 0---skip remote upgrade  1---ready to update process
@@ -74,5 +75,9 @@ typedef enum
 }firmreCheck_t;
 
 int computeUpgradeFileMd5(const char *file_path, char *value);
+firmreCheck_t getUpgradeFile(const char *url,const char *md5);
+void prepareFirmware(const char *localFilePath);
+
+
 
 #endif

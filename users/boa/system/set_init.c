@@ -4615,14 +4615,16 @@ int setinit(int argc, char** argv)
 	multi_ap_app();
 
     //if agent never joined mesh,open dhcpd, otherwise close
-    int map_configured_band;
+    //int map_configured_band;
     int map_state;
-    apmib_get(MIB_MAP_CONFIGURED_BAND,(void *)&map_configured_band);
+    int first_login;
+    //apmib_get(MIB_MAP_CONFIGURED_BAND,(void *)&map_configured_band);
     apmib_get(MIB_MAP_CONTROLLER, (void *)&map_state);
+    apmib_get(MIB_FIRST_LOGIN, (void *)&first_login);
     
     if(lan_dhcp_mode == DHCP_CLIENT && map_state == 2)
     {
-        if(map_configured_band == 3)
+        if(first_login == 1)
         {
             //printf("[%s:%d] map_configured_band = %d\n", __FUNCTION__, __LINE__, map_configured_band);
 			if (find_pid_by_name("udhcpd") > 0)

@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # RLX Linux builder
-# Fri Oct 18 16:01:01 2019
+# Sun Oct 27 18:05:41 2019
 #
 
 #
@@ -190,6 +190,8 @@ CONFIG_APP_UPDATEDD=y
 CONFIG_APP_WIRELESSTOOLS=y
 CONFIG_APP_WSC=y
 CONFIG_APP_SCHEDULE=y
+CONFIG_APP_KLINK=y
+CONFIG_APP_DAEMON=y
 
 #
 # Libraries Settings

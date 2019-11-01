@@ -69,6 +69,8 @@
 
 #define FORM_FW_UPLOAD	"formUpload"
 #define FORM_CFG_UPLOAD	"formUploadConfig"
+#define FORM_UPGRADE_SLAVE	"formUpgradeSlave"
+
 
 #if defined(CONFIG_APP_TR069) && defined(_CWMP_WITH_SSL_)
 #define FORMTR069CACERT "formTR069CPECert"
@@ -105,7 +107,7 @@
 #if defined(CONFIG_POCKET_ROUTER_SUPPORT)
 #define APPLY_COUNTDOWN_TIME 35 
 #else
-#define APPLY_COUNTDOWN_TIME 20 
+#define APPLY_COUNTDOWN_TIME 35 //20->35
 #endif
 #else
 #define APPLY_COUNTDOWN_TIME 0
@@ -1039,6 +1041,10 @@ void formLEDControl(request *wp, char *path, char *query);
 void formAddMeshNode(request *wp, char *path, char *query);
 void fromTimerReboot(request *wp, char *path, char *query);
 void formNewWizard(request *wp, char *path, char *query);
+void formUpgradeSlave(request *wp, char *path, char *query);
+void formRemoteUpgradeSlave(request *wp, char *path, char *query);
+void formRemoteUpgradeMaster(request *wp, char *path, char *query);
+void formRemoteUpgrade(request *wp, char *path, char *query);
 
 /* variables exported in main.c */
 extern char *WAN_IF;

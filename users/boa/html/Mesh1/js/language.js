@@ -13,7 +13,7 @@ var getNavLanguage = function(){
 /**
  * 设置语言类型： 默认为中文
  */
-var i18nLanguage = "zh-CN";
+var i18nLanguage = "en";
 
 /*
 设置一下网站支持的语言种类
@@ -69,32 +69,6 @@ var execI18n = function(){
 		        	$(".logo_img").attr("src","img/kingsignal_ch.png");
 		        	$(".login_logo img").attr("src","img/kingsignal_ch.png");
 		        }
-		        
-		        //execI18n();
-		        //将系统语言设置为浏览器对应的语言
-//		        var insertEle = $(".i18n");
-//	            insertEle.each(function() {
-//	                // 根据i18n元素的 name 获取内容写入
-//	                $(this).html($.i18n.prop($(this).attr('name')));
-//	            });
-//	
-//	            var insertInputEle = $(".i18n-input");
-//	            insertInputEle.each(function() {
-//	                var selectAttr = $(this).attr('selectattr');
-//	                if (!selectAttr) {
-//	                    selectAttr = "value";
-//	                }
-//	                $(this).attr(selectAttr, $.i18n.prop($(this).attr('selectname')));
-//	                var guest_net_text=$(this).attr('selectname');
-//	                if(guest_net_text.indexOf("guest_net")!=-1){
-//	                	$(this).text($.i18n.prop($(this).attr('selectname')));
-//	                }
-//	                if($(".uploadurl").text()!=""||$(".uploadurl").text()!=undefined||$(".uploadurl").text()!=null){
-//						$(".Unselected_file").text($.i18n.prop($(this).attr('selectname')));
-//					}else{
-//						$(".Unselected_file").text("");
-//					}
-//	            });
                 // 存到缓存中
                 $.cookie("userLanguage",navLanguage,{
                     expires:30

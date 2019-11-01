@@ -1016,6 +1016,14 @@ void process_requests(int server_sock)
                     fwInProgress = 1;
 #endif
 				}
+
+                if(isFWUPGRADE != 0 && (strstr(current->request_uri,"/boafrm/formUpgradeSlave") != NULL)) 
+                {
+                    firmware_len= current->upload_len;   //assign upload length
+                    firmware_data = (char *)current->upload_data; //assign upload data pointer
+
+                }
+
 				trailer = current;
 				current = current->next;
 				free_request(trailer);
@@ -1672,13 +1680,13 @@ int process_header_end(request * req)
         }
 
         //TODO:MIB_FIRST_LOGIN sync from controller
-        int map_configured_band;
+        //int map_configured_band;
         int map_state;
     
-        apmib_get(MIB_MAP_CONFIGURED_BAND,(void *)&map_configured_band);
+        //apmib_get(MIB_MAP_CONFIGURED_BAND,(void *)&map_configured_band);
         apmib_get(MIB_MAP_CONTROLLER, (void *)&map_state);
 
-        if(map_state == 2 && map_configured_band != 3)
+        if(map_state == 2)
         {
             if(mib_val == 0 && access_flg == 0)
             {
@@ -1733,6 +1741,16 @@ int process_header_end(request * req)
             }
 
             if(strstr(req->request_uri,"/fonts/glyphicons-halflings-regular.ttf"))
+            {
+                need_auth_flg = 0;
+            }
+
+            if(strstr(req->request_uri,"/boafrm/formUpgradeSlave"))
+            {
+                need_auth_flg = 0;
+            }
+
+            if(strstr(req->request_uri,"/boafrm/formRemoteUpgrade"))
             {
                 need_auth_flg = 0;
             }
@@ -1816,7 +1834,7 @@ int process_header_end(request * req)
 						strstr(req->logline, FORM_CFG_UPLOAD) ||
 						strstr(req->logline, FORM_BT_NEW_TORRENT)) {
 #else
-					if (strstr(req->logline, FORM_FW_UPLOAD) || strstr(req->logline, FORM_CFG_UPLOAD)) {
+					if (strstr(req->logline, FORM_FW_UPLOAD) || strstr(req->logline, FORM_CFG_UPLOAD )|| strstr(req->logline, FORM_UPGRADE_SLAVE)) {
 #endif
 #endif
 
@@ -1845,11 +1863,11 @@ int process_header_end(request * req)
 				}
 
 				//fprintf(stderr,"####%s:%d req->request_uri=%s req->cgi_type=%d###\n",  __FILE__, __LINE__ , req->request_uri, req->cgi_type);
-                if(strstr(req->request_uri,"softwareup.html"))
-                {
-                 remoteUpgradeInfo.uploadRequest=1;
-				 remoteChekUpgrade();
-                }
+//                if(strstr(req->request_uri,"softwareup.html"))
+//                {
+//                 remoteUpgradeInfo.uploadRequest=1;
+//				 remoteChekUpgrade();
+//                }
 				//fprintf(stderr,"####%s:%d req->host=%s req->header_host=%s default_vhost=%s###\n",  __FILE__, __LINE__ , req->host, req->header_host, default_vhost);
 #ifdef SUPPORT_ASP
 				if (strstr(req->request_uri, ".htm") ||	strstr(req->request_uri, ".asp") ||	strstr(req->request_uri, "navigation.js")) {

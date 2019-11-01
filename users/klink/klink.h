@@ -47,6 +47,12 @@ Description  :
 
 typedef enum  
 {
+  SLAVE1=(ENUM_DEFAULT+1),SLAVE2,SLAVE3,SLAVE4,SLAVE5,SLAVE6,SLAVE7,SLAVE8,
+  SLAVE9,SLAVE10,SLAVE11,SLAVE12,SLAVE13,SLAVE14,SLAVE15,SLAVE16,   
+}klinkMeshDeviceIndex;  
+
+typedef enum  
+{
   KLINK_START=ENUM_DEFAULT,
   KLINK_SLAVE_SEND_VERSION_INFO,    
   KLINK_MASTER_SEND_ACK_VERSION_INFO,    
@@ -116,6 +122,8 @@ typedef struct etherAddr
 #define TIME_INTERVAL              60
 
 extern int app_event_handler(int fd,char *buffer);
+
+
 
 
 

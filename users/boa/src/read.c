@@ -621,7 +621,10 @@ int write_body(request * req)
 		if (req->daemon_killed == 0) {
 #ifndef NO_ACTION
 			extern void killDaemon(int wait);
-			killDaemon(1);
+            if(strstr(req->request_uri,"/boafrm/formUpgradeSlave") == NULL)
+            {
+			    killDaemon(1);
+            }
 #endif
 			req->daemon_killed = 1;
 		}

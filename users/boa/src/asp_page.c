@@ -487,6 +487,10 @@ form_name_t root_form[] = {
     {"formAddMeshNode",formAddMeshNode},
     {"fromTimerReboot",fromTimerReboot}, 
     {"formNewWizard",formNewWizard}, 
+    {"formUpgradeSlave",formUpgradeSlave}, 
+    {"formRemoteUpgradeSlave",formRemoteUpgradeSlave},
+    {"formRemoteUpgradeMaster",formRemoteUpgradeMaster},
+    {"formRemoteUpgrade",formRemoteUpgrade},
 	{NULL, NULL}
 };
 
@@ -1114,10 +1118,10 @@ void handleForm(request *req)
 	else {
 		form_name_t *now_form;
 		ptr+=strlen(SCRIPT_ALIAS);
-		if (!strncmp(ptr, "formRemoteUp",12))
+		if ((strlen(ptr) == 12) && !strncmp(ptr, "formRemoteUp",12))
 		{   
-		printf("===============%s--%s--%d===========================\n",__FILE__,__FUNCTION__,__LINE__);
-		remoteUpgradeInfo.upgradeConfirm=1;
+    		printf("===============%s--%s--%d===========================\n",__FILE__,__FUNCTION__,__LINE__);
+    		remoteUpgradeInfo.upgradeConfirm=1;
 		}
 
 		for (i=0; root_form[i].name!=NULL; i++) {
@@ -1143,6 +1147,16 @@ void handleForm(request *req)
 				}
 
                 if(strcmp(now_form->name,"formNewWizard")==0)
+				{
+					log_boaform(now_form->name,req);	
+				}
+
+                if(strcmp(now_form->name,"formUpgradeSlave")==0)
+				{
+					log_boaform(now_form->name,req);	
+				}
+
+                if(strcmp(now_form->name,"formRemoteUpgrade")==0)
 				{
 					log_boaform(now_form->name,req);	
 				}
@@ -1333,20 +1347,21 @@ void handleScript(request *req,char *left1,char *right1)
 extern request inner_req;
 extern char inner_req_buff[MAX_INNER_REQ_BUFF];
 extern int middle_segment; //Brad add for update content length
+static char format_buf[MAX_INNER_REQ_BUFF];
 int req_format_write(request *req, char *format, ...)
 {
 	int bob;
 	va_list args;
-	char temp[MAX_INNER_REQ_BUFF];
+	char format_buf[MAX_INNER_REQ_BUFF];
 
 	if (!req || !format)
 		return 0;
 	va_start(args, format);
-	vsnprintf(temp, sizeof(temp), format, args);
+	vsnprintf(format_buf, sizeof(format_buf), format, args);
 	va_end(args);
-	bob = strlen(temp);
+	bob = strlen(format_buf);
 	if ((void*)req == (void*)(&inner_req)) {
-		strcpy(inner_req_buff, temp);
+		strcpy(inner_req_buff, format_buf);
 	}
 	else {
 #ifndef SUPPORT_ASP
@@ -1364,7 +1379,7 @@ int req_format_write(request *req, char *format, ...)
 #endif
 		middle_segment = middle_segment + bob; //brad add for update exact length of asp file
 		if (bob > 0) {
-			memcpy((req->buffer+req->buffer_end), temp, bob);	
+			memcpy((req->buffer+req->buffer_end), format_buf, bob);	
 			req->buffer_end += bob;
 		}
 	}

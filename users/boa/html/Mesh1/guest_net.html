@@ -23,6 +23,11 @@
 			    position: relative;
 			    top: 3px;
 			}
+			.guest_renzheng{
+				margin-right: 0;
+			}
+			.form-group_smart label{
+				width: 140px;
 			}
 		</style>
 	</head>
@@ -30,10 +35,9 @@
 		<div class="guest_net">
 			<form  action="/boafrm/formGuestWlanSetup" method="POST" name="formGuest">
 				<div class="form-group_smart" style="margin-bottom: 10px;">
-					<!--<input type="hidden" name="guest_active_time" class="guest_active_time" value=""/>-->
 					<label class="i18n" name="guestmode_guest"></label>
 					<div class="switch_check">
-						<input type="checkbox" class="checkbox_switch" data-size="mini" name="guest_wlan_enabled" value=""/>
+						<input type="checkbox" class="checkbox_switch" data-size="mini" name="guest_wlan_enabled" value="" style="display: none;"/>
 					</div>
 				</div>
 				<div class="form-group_smart hide_msg"><label class="i18n" name="wifiname_guest"></label>&nbsp;&nbsp;<input class="form_input" type="text" value="<% getIndex("guest_ssid");%>" name="guest_ssid"/></div>
@@ -42,7 +46,7 @@
 					<label class="guest_renzheng i18n" name="renzheng_guest"></label>
 					<div style="display: inline-block;"><input type="radio" name="guest_active_time" value="4" class="radio4"><span class="i18n-input" selectname="guest_net_4"></span></div>
 					<div style="display: inline-block;"><input type="radio" name="guest_active_time" value="8" class="radio8"><span class="i18n-input" selectname="guest_net_8"></span></div>
-					<div style="display: inline-block;"><input type="radio" name="guest_active_time" value="0" class="radio0"><span class="i18n-input" selectname="guest_net_long"></span></div>
+					<div style="display: inline-block;"><input type="radio" name="guest_active_time" value="0" class="radio0"><span class="i18n-input" selectname="guest_net_long" style="width: 120px;"></span></div>
 					
 					<input type="hidden" value="/guest_net.html" name="submit-url">
 				</div>

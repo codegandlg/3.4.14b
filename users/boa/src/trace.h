@@ -41,9 +41,12 @@ Description  :
 #define DPrintf(fmt, ...)    printf("[%s:%d] " fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 
 ///////////trace obj define here///////
-#define DTRACE_FMWLAN        DTRACE_OFF
-#define DTRACE_ASP_PAGE      DTRACE_OFF
-#define DTRACE_ASP_FMMGMT    DTRACE_OFF
+#define DTRACE_FMWLAN           DTRACE_OFF
+#define DTRACE_ASP_PAGE         DTRACE_OFF
+#define DTRACE_ASP_FMMGMT       DTRACE_OFF
+#define DTRACE_SLAVE_UPGRADE    DTRACE_ON
+#define DTRACE_UPGRADE          DTRACE_ON
+
 
 ///////////////////////////////////
 

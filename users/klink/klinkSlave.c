@@ -400,7 +400,7 @@ int main(int argc,char **argv)
     routeTableFlag=getGetwayIp(ip);
 	if(routeTableFlag!=0)
 	{
-	 printf("%s_%d:get gateway ip fail",__FUNCTION__,__LINE__);
+	 printf("%s_%d:get gateway ip fail\n",__FUNCTION__,__LINE__);
 	 return 0;
 	}
 	
@@ -409,10 +409,9 @@ int main(int argc,char **argv)
     server_addr.sin_port = htons(KLINK_PORT);
     if(connect(sock,(struct sockaddr*)&server_addr, sizeof(struct sockaddr_in)) < 0)
 	{
-        ERR_EXIT("connect to %s:%s failed", argv[1], argv[2]);
+        ERR_EXIT("connect to %s:%s failed\n", argv[1], argv[2]);
     }
-    fprintf(stdout, "% 9d\n", getpid());
-    fflush(stdout);
+
     int ready;  
     int maxfd;  
     int fd_stdin = fileno(stdin);

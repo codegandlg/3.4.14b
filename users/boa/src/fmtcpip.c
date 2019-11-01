@@ -3088,10 +3088,13 @@ void formWanTcpipSetup(request *wp, char *path, char *query)
 #endif	
 
 #ifndef NO_ACTION
-	run_init_script(arg);                
+    //DPrintf("run_init_script, arg = %s.\n", arg);
+    run_init_script_flag = 1;
+	run_init_script(arg); 
 #endif
 
-	OK_MSG(submitUrl);
+	//OK_MSG(submitUrl);
+	REBOOT_WAIT(submitUrl);
 
 	return;
 setErr_end:

@@ -25,6 +25,9 @@ Description  :
 #include <errno.h>
 #include "klink.h"
 #include "cJSON.h"
+KlinkNode_t* g_pKlinkHead = NULL;
+KlinkNode_t klinkNodeData;
+
 
 /*init head*/
 KlinkNode_t* initKlinkListHead()
@@ -209,6 +212,8 @@ void showKlinkNode(KlinkNode_t*head)
 			phead=phead->next;
 		}
 		printf("#################\n");
-	}	
+	}
+	printf("show list node date is:slaveNum     [%d]\n",g_pKlinkHead->slaveMeshNum);
+	
 }
 

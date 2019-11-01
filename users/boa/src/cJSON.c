@@ -2192,3 +2192,19 @@ void cJSON_Minify(char *json)
     /* and null-terminate. */
     *into = '\0';
 }
+
+void cJSON_InsertStringToObject(cJSON *object, int which, const char *name, const char *value)
+{
+    cJSON *item;
+    item = cJSON_CreateString(value);
+
+    if (!item)
+    {
+        return;
+    }
+
+    item->string = cJSON_strdup(name);
+
+    cJSON_InsertItemInArray(object, which, item);
+}
+

@@ -478,15 +478,26 @@ cJSON *getRemoteVersionLog()
  cJSON *topRoot=NULL;
  cJSON *root=NULL;
  cJSON *parameters=NULL;
+
+ remoteUpgradeInfo.uploadRequest=1;
+ remoteChekUpgrade();
+                 
  topRoot=cJSON_CreateObject();
  cJSON_AddItemToObject(topRoot, "remoteUprateInfo",root=cJSON_CreateArray());
- cJSON_AddItemToArray(root,parameters=cJSON_CreateObject());	
-
- cJSON_AddStringToObject(parameters,"checkVersionStatus",remoteUpgradeInfo.checkVersionStatus?"1":"0");
-
- if(remoteUpgradeInfo.checkVersionStatus)
+ cJSON_AddItemToArray(root,parameters=cJSON_CreateObject());
+ if(remoteUpgradeInfo.firmwareCheckStatus==FIRMWARE_ERROR_NETWORK_UNREACHABLE)
  {
+  cJSON_AddNumberToObject(parameters,"firmwareCheckStatus",FIRMWARE_ERROR_NETWORK_UNREACHABLE);  
+ }
+  else
+ {
+  cJSON_AddStringToObject(parameters,"checkVersionStatus",remoteUpgradeInfo.checkVersionStatus?"1":"0");
+  cJSON_AddStringToObject(parameters,"version",remoteUpgradeInfo.remoteFwVersion);
+
+  if(remoteUpgradeInfo.checkVersionStatus)
+  {
   cJSON_AddStringToObject(parameters,"remoteVersionLog",remoteUpgradeInfo.versionUpdateLog);
+  }
  }
  printf("-------------->getRemoteVersionLog=\n[%s]\n-------------->\n",cJSON_Print(topRoot));
  return topRoot;
@@ -877,15 +888,14 @@ int getInfo(request *wp, int argc, char **argv)
 		return req_format_write(wp, "%dday:%dh:%dm:%ds",
 							day, hr, mn, sec);
 	}
-
 	else if(( !strcmp(name, "wanUplinkRate"))||( !strcmp(name, "wanDownlinkRate"))) {
         wanRate.ifname="eth1";
-//			ret=getProcIfData(&wanRate);
+			//ret=getProcIfData(&wanRate);
 
 		//printf("%s:--------->%d:  uplinkRate=%0.2lf  downlink=%0.2lf",__FUNCTION__,__LINE__,wanRate.txRate,wanRate.rxRate);
 		if( !strcmp(name, "wanUplinkRate"))
 		{ 
-		  return req_format_write(wp, "%dKbps",(int)(wanRate.txRate)*8); 
+		  return req_format_write(wp, "%dKbps",(int)(wanRate.txRate)*8);
 		}
 		else if( !strcmp(name, "wanDownlinkRate"))
 		{
@@ -5311,7 +5321,7 @@ else if(!strcmp(argv[0],"caCertExist"))
 	else if(!strcmp(argv[0],"countDownTime"))
 	{
 		req_format_write(wp, "%d",countDownTime);
-		countDownTime = APPLY_COUNTDOWN_TIME;
+		//countDownTime = APPLY_COUNTDOWN_TIME;
 		return 0;
 	}
 
