@@ -47,6 +47,8 @@ Description  :
 #define _slave 
 
 unsigned int g_lastCheckTIme = 0;
+extern char *fwVersion;
+
 
 
 #define ERR_EXIT(m, ...)\
@@ -314,7 +316,7 @@ int _slave getSlaveVersionInfo(char *pSoftVersion, char *pWanHWAddr)
 	{
 		sprintf(pWanHWAddr,"%s","00:00:00:00:00:00");
 	}
-	strcpy(pSoftVersion,"WM V1.0.6");
+	strcpy(pSoftVersion,fwVersion);
 }
 
 

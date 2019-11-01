@@ -29,20 +29,21 @@ all: $(TARGET)
 klinkM: klinkMaster.o cJSON.o klinkLinksListFunc.o
 	$(CC) klinkMaster.o cJSON.o klinkLinksListFunc.o -lm $(LDFLAGS) $(COMMON_CFLAGS) $(IFLAGS) -L$(APMIB_DIR) -lapmib  -o klinkM -lrt 
 
-klinkS: klinkSlave.o cJSON.o
-	$(CC) klinkSlave.o cJSON.o -lm $(LDFLAGS) $(COMMON_CFLAGS)  $(IFLAGS) -L$(APMIB_DIR) -lapmib  -o klinkS -lrt 
+klinkS: klinkSlave.o cJSON.o version.o
+	$(CC) klinkSlave.o cJSON.o version.o -lm $(LDFLAGS) $(COMMON_CFLAGS)  $(IFLAGS) -L$(APMIB_DIR) -lapmib  -o klinkS -lrt 
 
 cJSON.o:cJSON.c
 	$(CC) -c cJSON.c -o cJSON.o -lrt -lm
  
-klinkSlave.o:klinkSlave.c
+klinkSlave.o:klinkSlave.c 
 	$(CC) -c klinkSlave.c  $(IFLAGS) -o klinkSlave.o
 
 klinkMaster.o:klinkMaster.c
 	$(CC) -c klinkMaster.c  $(IFLAGS) -o klinkMaster.o
 klinkLinksListFunc.o:klinkLinksListFunc.c
 	$(CC) -c klinkLinksListFunc.c  $(IFLAGS) -o klinkLinksListFunc.o
-
+version.o: 	../boa/src/version.c
+	$(CC) $(CFLAGS) $(IFLAGS) $(COMMON_CFLAGS) -c -o $@ $<
 ## libEntrydExt.a
 LIBENTRYDEXT=klinkLinksListFunc.a
 $(LIBENTRYDEXT): klinkLinksListFunc.o klink.h 
@@ -52,7 +53,6 @@ $(LIBENTRYDEXT): klinkLinksListFunc.o klink.h
 romfs:
 	$(ROMFSINST) $(KLINK_DIR)/klinkM /bin/
 	$(ROMFSINST) $(KLINK_DIR)/klinkS /bin/
-	$(ROMFSINST) $(KLINK_DIR)/test /bin/
 	
 .PHONY: clean
 

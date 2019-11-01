@@ -43,7 +43,6 @@ extern void showKlinkNode(KlinkNode_t*head);
 extern KlinkNode_t* g_pKlinkHead;
 extern KlinkNode_t klinkNodeData;
 
-
 KlinkNode_t* createMeshTopologyLinkList(cJSON *root)
 {
   cJSON *head;
@@ -213,10 +212,6 @@ KlinkNode_t* setMeshLinklistDataToMib(KlinkNode_t*head)
 		   default:
 		   	  printf("%s_%d:index error,index numbre is %d \n",__FUNCTION__,__LINE__,i);	
 		   	  break;
-		   
-	        memset(tmpBuf, 0, sizeof(tmpBuf));
-	        apmib_get(MIB_KLINK_SLAVE1_SOFT_VERSION, (void *)tmpBuf);
-            printf("%s_%d:set slave version data [%s] ok \n",__FUNCTION__,__LINE__,tmpBuf);	
 		   	}
 
 		}

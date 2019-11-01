@@ -24,9 +24,6 @@ Description  :
 #include<string.h>
 #include "apmib.h"
 #include "cJSON.h"
-
-
-
 #include "./../../klink/klink.h"
 extern convertIntToString(char* str, int intnum);
 extern KlinkNode_t* initKlinkListHead();
@@ -35,6 +32,7 @@ extern KlinkNode_t* serchKlinkListNode(KlinkNode_t*head,char*  date);
 extern KlinkNode_t* deletKlinkListNode(KlinkNode_t*head,char* date);
 extern void showKlinkNode(KlinkNode_t*head);
 //static KlinkNode_t  klinkNodeData;
+extern  unsigned char *fwVersion;
  KlinkNode_t* g_pKlinkHeadNode;
 
 int getSlaveMacNum(cJSON *root)
@@ -70,6 +68,7 @@ int getMeshNodeNumber()
  FILE *fp=NULL;
  int read=0;
  int len  = 0;
+ int ret=-1;
  char*	line  = NULL;   
  fp = fopen("/tmp/topology_json", "r");
  if(fp == NULL)
@@ -96,7 +95,7 @@ int getMeshNodeNumber()
   }
    else
    {
-    return RETURN_FAIL;
+    return ret;
    }
 
  }
@@ -114,7 +113,6 @@ KlinkNode_t getMibInfo(char* sourceValue)
     int i=0;
 	KlinkNode_t klinkNodeData;
 	memset(&klinkNodeData,0,sizeof(KlinkNode_t));
-	
     buff=sourceValue;  
     p = strsep(&buff, ";");
     while(p)
@@ -179,19 +177,18 @@ int createMeshLinkList()
   KlinkNode_t klinkNodeData;
   memset(&klinkNodeData,0x00,sizeof(KlinkNode_t));
   memset(tmpBuf,0x00,sizeof(tmpBuf));
-  if (!apmib_get( MIB_KLINK_SLAVE1_SOFT_VERSION,(void *)tmpBuf)) 
   slaveNum=getMeshNodeNumber();	
-  if(slaveNum==0)
+  if(slaveNum<1)
   {
   	return 0;
   }
   g_pKlinkHeadNode=initKlinkListHead();
   clearKlinkList(g_pKlinkHeadNode);  
-   
   for(i; i< slaveNum; i++)
   {
    switch(i)
    {
+    case SLAVE0:
 	case SLAVE1:
 	 apmib_get(MIB_KLINK_SLAVE1_SOFT_VERSION, (void *)tmpBuf);
 	 break;
@@ -262,6 +259,7 @@ int createMeshLinkList()
 		printf("head_node is empty\n");
 		return NULL;
 	}
+
 	while(strcmp(phead->slaveVersionInfo.slaveMac,pdata->slaveVersionInfo.slaveMac)&&phead->next!=NULL)
 	{    
 		phead=phead->next;
@@ -289,7 +287,14 @@ void getSlaveVersion(char targetVersion[], char* mac)
  strcpy(data.slaveVersionInfo.slaveMac,pMac);
  createMeshLinkList();
  pTargetVersion=serchTargetNode(g_pKlinkHeadNode,&data);
- strcpy(targetVersion,pTargetVersion->slaveVersionInfo.slaveSoftVer);
+ if(pTargetVersion!=NULL)
+ {
+  strcpy(targetVersion,pTargetVersion->slaveVersionInfo.slaveSoftVer);
+ }
+ else
+ {
+  strcpy(targetVersion,fwVersion);
+ }
 }
 
 
