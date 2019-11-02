@@ -442,6 +442,75 @@ int syncMasterLedSwitch(int fd, cJSON *messageBody)
 	cJSON_Delete(responseJSON);	
 }
 
+
+
+/*
+ *uncrypt wifi settings formate:
+ *{"message":"6","uncrypWifiSetting":{"encrypt":"0","ssid":"ssidName"}}
+ *
+*/
+int syncUncrypWifiSettings(int fd, cJSON *messageBody)
+{
+  printf("%s_%d: \n",__FUNCTION__,__LINE__);
+   cJSON *jasonObj=NULL;
+   char *pMessageBody=NULL;
+   char ssidBuf[64]={0};
+   char ssid[64]={0};
+   ENCRYPT_T encrypt;   
+   int value=-1;
+   int localValue=1;
+   int ret=0;
+   char *pResponseMsg=NULL;
+   cJSON *responseJSON=NULL;
+
+   if(jasonObj = cJSON_GetObjectItem(messageBody,"uncrypWifiSetting"))
+   {
+    printf("%s_%d: \n",__FUNCTION__,__LINE__);
+
+     if(apmib_get(MIB_WLAN_ENCRYPT,(void *)&encrypt))
+    {
+     if(encrypt!=ENCRYPT_DISABLED)
+     {
+      encrypt=ENCRYPT_DISABLED;
+	  apmib_set(MIB_WLAN_ENCRYPT, (void *)&encrypt);
+	  ret=1;
+	  if(apmib_update(CURRENT_SETTING) <= 0)
+         {
+           printf("apmib_update CURRENT_SETTING fail.\n");
+         }
+     }
+    }
+    printf("%s_%d: \n",__FUNCTION__,__LINE__); 
+	if(apmib_get(MIB_WLAN_SSID,(void *)&ssidBuf))
+    {
+     if(strcmp(ssidBuf,cJSON_GetObjectItem(jasonObj,"ledEnable")->valuestring))
+     {
+      strcpy(ssid,ssidBuf);
+	  apmib_set(MIB_WLAN_SSID, (void *)&ssid);	
+	  ret=1;
+
+     }
+    }
+	if(ret==1)
+	{
+	 if(apmib_update(CURRENT_SETTING) <= 0)
+        {
+           printf("apmib_update CURRENT_SETTING fail.\n");
+        }
+	  
+	}
+   }
+	printf("%s_%d: \n",__FUNCTION__,__LINE__);
+
+    /*response ack message to master*/
+	responseJSON = cJSON_CreateObject();
+	cJSON_AddStringToObject(responseJSON, "messageType", "7"); //4==KLINK_SALAVE_SEND_ACK_RESPONSE
+	pResponseMsg = cJSON_Print(responseJSON); 
+	printf("%s_%d:send version ack data [%s]  \n",__FUNCTION__,__LINE__,pResponseMsg);
+	send(fd , pResponseMsg, strlen(pResponseMsg) , 0 );
+	cJSON_Delete(responseJSON);	
+}
+
 int _slave klinkSlaveStateMaching(int sd,int messageType,cJSON *messageBody)
 {
 
@@ -459,6 +528,9 @@ int _slave klinkSlaveStateMaching(int sd,int messageType,cJSON *messageBody)
    case KLINK_MASTER_SEND_LED_SWITCH_TO_SLAVE:
      syncMasterLedSwitch(sd,messageBody); 
 	 break;
+   case KLINK_MASTER_SEND_UNENCRYP_WIFI_INFO_TO_SLAVE:
+     syncUncrypWifiSettings(sd,messageBody); 
+	 break; 
   default:
   	/*if havn't incomming message,must period send beartbead*/ 
   	 messageType=KLINK_HEARD_BEAD_SYNC_MESSAGE; 

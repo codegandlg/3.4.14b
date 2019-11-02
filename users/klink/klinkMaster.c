@@ -45,6 +45,8 @@ extern KlinkNode_t klinkNodeData;
 static unsigned int g_lastMasterCheckTime = 0;
 static unsigned int g_lastCheckTIme = 0;
 static unsigned int g_ledLastStatus = 3;
+static unsigned int g_unCrypWifiSyncState = 1; //0-needn't synnc    1-sync is needed
+
 
 unsigned int upSecond(void)
 {
@@ -254,7 +256,13 @@ char* periodCheckSyncValueToSlave(int fd)
    char buff[2]={0};
 
      /*led switch*/
-     apmib_get(MIB_LED_ENABLE, (void *)&ledEnable); 
+     apmib_get(MIB_LED_ENABLE, (void *)&ledEnable);
+
+     /*sync uncript wlan settings*/
+	 ENCRYPT_T encrypt;
+	 char ssidBuf[64]={0};
+     apmib_get( MIB_WLAN_ENCRYPT,  (void *)&encrypt);
+	 
 	 if(ledEnable!=g_ledLastStatus)
 	 {
 	   g_ledLastStatus=ledEnable;
@@ -269,6 +277,28 @@ char* periodCheckSyncValueToSlave(int fd)
 	   send(fd, pSendMsg,strlen(pSendMsg), 0) ;	
 	   cJSON_Delete(root);	 	 
 	 } 
+
+	 /*when wlan enctrypt is disabled,sync wlan settings*/
+	 else if ((encrypt ==  ENCRYPT_DISABLED)&&(g_unCrypWifiSyncState==1)) 
+	 {	
+	   encrypt = ENCRYPT_DISABLED;	   
+       apmib_get( MIB_WLAN_SSID,  (void *)&ssidBuf);
+       memset(buff,0,sizeof(buff));
+	   g_ledLastStatus=ledEnable;
+	   sprintf(buff,"%d",ENCRYPT_DISABLED);
+	   root = cJSON_CreateObject();
+	   cJSON_AddStringToObject(root, "messageType", "6"); //KLINK_MASTER_SEND_UNENCRYP_WIFI_INFO_TO_SLAVE
+	   cJSON_AddItemToObject(root, "uncrypWifiSetting", parameters = cJSON_CreateObject());
+	   printf("%s_%d: \n",__FUNCTION__,__LINE__);
+	   cJSON_AddStringToObject(parameters, "encrypt", buff);
+	   cJSON_AddStringToObject(parameters, "ssid", ssidBuf);
+	   pSendMsg = cJSON_Print(root);  
+	    printf("%s_%d:send_uncrypt_wifi_config_to_slave:\n %s \n ",__FUNCTION__,__LINE__,pSendMsg);
+	   send(fd, pSendMsg,strlen(pSendMsg), 0) ;	
+	   cJSON_Delete(root);	
+	   g_unCrypWifiSyncState=0;
+	 } 
+
     else
     {
 	   root = cJSON_CreateObject();
@@ -356,12 +386,16 @@ int klinkMasterStateMaching(int sd,int messageType,cJSON *messageBody)
   case KLINK_SALAVE_SEND_ACK_RESPONSE:
     printf("=>get slave led switch ack\n");
 	 break;
+    case KLINK_SLAVE_SEND_UNCRYPT_WIFI_SETTING_ACK:
+    printf("=>get uncrypt wifi setting ack\n");
+	 break;
+  
   default:
   	 break;
  }
  	printf("%s_%d: \n",__FUNCTION__,__LINE__);
  if((messageType==KLINK_HEARD_BEAD_SYNC_MESSAGE)||(messageType==KLINK_SALAVE_SEND_ACK_RESPONSE)||
- 	(messageType==KLINK_HEARD_BEAD_SYNC_MESSAGE))
+ 	(messageType==KLINK_HEARD_BEAD_SYNC_MESSAGE)||(messageType==KLINK_SLAVE_SEND_UNCRYPT_WIFI_SETTING_ACK))
   {
    periodCheckSyncValueToSlave(sd);
   }
