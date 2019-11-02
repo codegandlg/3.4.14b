@@ -43,7 +43,8 @@ Description  :
 #define MAX_CLIENT                 400
 #define KLINK_IF               "wlan0"
 #define MAX_SLAVE_NUM              15
-#define ENUM_DEFAULT              0
+#define ENUM_DEFAULT               0
+#define HEART_BEAT_TIME_SCHEDULE   5    /*seconds*/
 
 typedef enum  
 {
@@ -54,8 +55,17 @@ typedef enum
 typedef enum  
 {
   KLINK_START=ENUM_DEFAULT,
+  	
   KLINK_SLAVE_SEND_VERSION_INFO,    
-  KLINK_MASTER_SEND_ACK_VERSION_INFO,    
+  KLINK_MASTER_SEND_ACK_VERSION_INFO, 
+
+  KLINK_HEARD_BEAD_SYNC_MESSAGE, 
+  
+  KLINK_MASTER_SEND_LED_SWITCH_TO_SLAVE, 
+  KLINK_SALAVE_SEND_ACK_RESPONSE, 
+
+  
+  
 }klinkMsgStateMachine_t;  
 
 typedef enum 

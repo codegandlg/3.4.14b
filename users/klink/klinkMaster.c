@@ -42,6 +42,17 @@ extern KlinkNode_t* deletKlinkListNode(KlinkNode_t*head,char* date);
 extern void showKlinkNode(KlinkNode_t*head);
 extern KlinkNode_t* g_pKlinkHead;
 extern KlinkNode_t klinkNodeData;
+static unsigned int g_lastMasterCheckTime = 0;
+static unsigned int g_lastCheckTIme = 0;
+static unsigned int g_ledLastStatus = 3;
+
+unsigned int upSecond(void)
+{
+	struct timespec ts;
+	clock_gettime(CLOCK_MONOTONIC, &ts);	
+	return ts.tv_sec;
+}
+
 
 KlinkNode_t* createMeshTopologyLinkList(cJSON *root)
 {
@@ -221,6 +232,57 @@ KlinkNode_t* setMeshLinklistDataToMib(KlinkNode_t*head)
 
 }
 
+/*
+ * led is on :MIB_LED_ENABLE=1   
+ * led is off:MIB_LED_ENABLE=0
+ *
+ *led switch data formate:
+ *{"message":"3","ledSwitch":{"ledEnable":"0"}}
+ *
+ *
+ *
+ *
+ *
+ *
+*/
+char* periodCheckSyncValueToSlave(int fd)
+{
+   char *pSendMsg=NULL;
+   cJSON *root=NULL;
+   cJSON *parameters=NULL;
+   int ledEnable;
+   char buff[2]={0};
+
+     /*led switch*/
+     apmib_get(MIB_LED_ENABLE, (void *)&ledEnable); 
+	 if(ledEnable!=g_ledLastStatus)
+	 {
+	   g_ledLastStatus=ledEnable;
+	   sprintf(buff,"%d",g_ledLastStatus);
+	   root = cJSON_CreateObject();
+	   cJSON_AddStringToObject(root, "messageType", "4"); //KLINK_MASTER_SEND_LED_SWITCH_TO_SLAVE
+	   cJSON_AddItemToObject(root, "ledSwitch", parameters = cJSON_CreateObject());
+	   	 	  printf("%s_%d: \n",__FUNCTION__,__LINE__);
+	   cJSON_AddStringToObject(parameters, "ledEnable", buff);
+	   pSendMsg = cJSON_Print(root);  
+	    printf("%s_%d:send_led_config_to_slave:\n %s \n ",__FUNCTION__,__LINE__,pSendMsg);
+	   send(fd, pSendMsg,strlen(pSendMsg), 0) ;	
+	   cJSON_Delete(root);	 	 
+	 } 
+    else
+    {
+	   root = cJSON_CreateObject();
+	   cJSON_AddStringToObject(root, "messageType", "3"); //KLINK_HEARD_BEAD_SYNC_MESSAGE
+	   pSendMsg = cJSON_Print(root);  
+	    printf("%s_%d:slave send_heartBeat_to_slave:\n %s \n ",__FUNCTION__,__LINE__,pSendMsg);
+	   send(fd, pSendMsg,strlen(pSendMsg), 0) ;	
+	   cJSON_Delete(root);	 
+     
+    }
+	
+   printf("%s_%d: \n",__FUNCTION__,__LINE__);
+}
+
 int parseSlaveVersionConf(int fd, cJSON *messageBody)
 {
    cJSON *jasonObj=NULL;
@@ -250,8 +312,35 @@ int parseSlaveVersionConf(int fd, cJSON *messageBody)
 //	cJSON_AddNumberToObject(responseJSON, "responseCode", fwVersion);
 	pResponseMsg = cJSON_Print(responseJSON); 
 	printf("%s_%d:send version ack data [%s]  \n",__FUNCTION__,__LINE__,pResponseMsg);
-
 	send(fd , pResponseMsg, strlen(pResponseMsg) , 0 );
+	cJSON_Delete(responseJSON);	
+}
+
+/*
+ *heard beat formate:
+ *{"message":"10","heardBead":{"heardBeadState":"sync"}}
+ *
+*/
+static int masterSendHeardBeatMessage(int fd)
+{
+  char* stringMessage=NULL;
+  cJSON *topRoot=NULL;
+  cJSON *root=NULL;
+  cJSON *parameters=NULL;
+  printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+  g_lastMasterCheckTime = upSecond();
+  if(upSecond() - g_lastMasterCheckTime > 8)	
+  {
+      topRoot = cJSON_CreateObject();
+      cJSON_AddStringToObject(topRoot, "messageType", "10");//1==KLINK_SLAVE_SEND_VERSION_INFO
+      cJSON_AddItemToObject(topRoot, "heardBead", root = cJSON_CreateObject());
+      cJSON_AddStringToObject(root, "heardBeadState", "sync");
+      stringMessage = cJSON_Print(topRoot);  
+      printf("%s_%d:sen message=%s \n",__FUNCTION__,__LINE__,stringMessage);
+      send(fd, stringMessage,strlen(stringMessage), 0) ;
+      cJSON_Delete(topRoot);
+      g_lastMasterCheckTime = upSecond();
+ }
 }
 
 int klinkMasterStateMaching(int sd,int messageType,cJSON *messageBody)
@@ -259,11 +348,24 @@ int klinkMasterStateMaching(int sd,int messageType,cJSON *messageBody)
  switch(messageType)
  {
   case KLINK_SLAVE_SEND_VERSION_INFO:
-     parseSlaveVersionConf(sd,messageBody);
+     parseSlaveVersionConf(sd,messageBody); //parse version then sent ack messageType=2
+	 break;
+  case KLINK_HEARD_BEAD_SYNC_MESSAGE:
+     printf("=>get slave heard bead \n");
+	 break;
+  case KLINK_SALAVE_SEND_ACK_RESPONSE:
+    printf("=>get slave led switch ack\n");
 	 break;
   default:
   	 break;
  }
+ 	printf("%s_%d: \n",__FUNCTION__,__LINE__);
+ if((messageType==KLINK_HEARD_BEAD_SYNC_MESSAGE)||(messageType==KLINK_SALAVE_SEND_ACK_RESPONSE)||
+ 	(messageType==KLINK_HEARD_BEAD_SYNC_MESSAGE))
+  {
+   periodCheckSyncValueToSlave(sd);
+  }
+ printf("%s_%d: \n",__FUNCTION__,__LINE__);
  return 0;
 }
 
@@ -348,6 +450,7 @@ int main(int argc , char *argv[])
     int slaveNumber=0;
 
 	//g_pKlinkHead=initKlinkListHead();
+	 g_lastMasterCheckTime = upSecond();
     while(TRUE) 
     {
         /*clear the socket set*/
@@ -440,9 +543,11 @@ int main(int argc , char *argv[])
                     buffer[valread] = '\0';
 					printf("++++get info from slave :%s\n",buffer);
                     parseMessageFromSlave(sd, (char*)buffer);
+					//periodCheckSyncValueToSlave(sd);
                 }
             }
         }
+
     }
       
     return 0;

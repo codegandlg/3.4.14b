@@ -43,10 +43,12 @@ Description  :
 #include "klink.h"
 #include <time.h>
 #include "cJSON.h"
+#include "apmib.h"
+
 
 #define _slave 
 
-unsigned int g_lastCheckTIme = 0;
+static unsigned int g_lastSlaveCheckTime = 0;
 extern char *fwVersion;
 
 
@@ -321,8 +323,39 @@ int _slave getSlaveVersionInfo(char *pSoftVersion, char *pWanHWAddr)
 
 
 /*
+ *heard beat formate:
+ *{"message":"10","heardBead":{"heardBeadState":"sync"}}
+ *
+*/
+int sendHeardBeatMessage(int fd)
+{
+  char* stringMessage=NULL;
+  cJSON *topRoot=NULL;
+  cJSON *root=NULL;
+  cJSON *parameters=NULL;
+  printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+ while(1) 
+ {
+ if(upSecond() - g_lastSlaveCheckTime > HEART_BEAT_TIME_SCHEDULE)	
+  {
+  topRoot = cJSON_CreateObject();
+  cJSON_AddStringToObject(topRoot, "messageType", "3");//3==KLINK_SLAVE_SEND_VERSION_INFO
+  cJSON_AddItemToObject(topRoot, "heardBead", root = cJSON_CreateObject());
+  cJSON_AddStringToObject(root, "heardBeadState", "sync");
+  stringMessage = cJSON_Print(topRoot);  
+  printf("%s_%d:sen message=%s \n",__FUNCTION__,__LINE__,stringMessage);
+  send(fd, stringMessage,strlen(stringMessage), 0) ;
+  cJSON_Delete(topRoot);
+  g_lastSlaveCheckTime = upSecond();
+  break;
+  }
+ }
+}
+
+
+/*
  * version formate:
-* {"slaveVersion":[{"slaveSoftVer":"WM V1.0.5","slaveMac":"00:11:22:33:44:55"}]}
+* {"messageType": "1","slaveVersion":{"slaveSoftVer":"WM V1.0.5","slaveMac":"001122334455"}}
 */
 
 void _slave sendFwVersionMessageToMaster(int sd) 
@@ -333,8 +366,23 @@ void _slave sendFwVersionMessageToMaster(int sd)
     cJSON *topRoot=NULL;
 	cJSON *root=NULL;
 	cJSON *parameters=NULL;
+	int localValue=1;
+	
 	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 
+    if(apmib_get(MIB_FIRST_LOGIN,(void *)&localValue))
+    {
+     if(localValue!=1)
+     {
+      localValue=1;
+	  apmib_set(MIB_FIRST_LOGIN,(void *)&localValue);	
+	  if(apmib_update(CURRENT_SETTING) <= 0)
+         {
+           printf("apmib_update CURRENT_SETTING fail.\n");
+         }
+     }
+    }
+	
     getSlaveVersionInfo(fwVersion, macAddr);	  
 	topRoot = cJSON_CreateObject();
 	cJSON_AddStringToObject(topRoot, "messageType", "1");//1==KLINK_SLAVE_SEND_VERSION_INFO
@@ -347,19 +395,81 @@ void _slave sendFwVersionMessageToMaster(int sd)
 	cJSON_Delete(topRoot);	
 }
 
+
+/*
+ *led switch formate:
+ *{"message":"3","ledSwitch":{"ledEnable":"0"}}
+ *
+*/
+int syncMasterLedSwitch(int fd, cJSON *messageBody)
+{
+  printf("%s_%d: \n",__FUNCTION__,__LINE__);
+   cJSON *jasonObj=NULL;
+   char *pMessageBody=NULL;
+   int value=-1;
+   int localValue=1;
+   char *pResponseMsg=NULL;
+   cJSON *responseJSON=NULL;
+
+   if(jasonObj = cJSON_GetObjectItem(messageBody,"ledSwitch"))
+   {
+    printf("%s_%d: \n",__FUNCTION__,__LINE__);
+	 value=(strncmp(cJSON_GetObjectItem(jasonObj,"ledEnable")->valuestring, "0",1)?1:0);
+	  printf("%s_%d: value=%d\n",__FUNCTION__,__LINE__,value);
+
+     if(apmib_get(MIB_LED_ENABLE,(void *)&localValue))
+    {
+     if(localValue!=value)
+     {
+      localValue=value;
+	  apmib_set(MIB_LED_ENABLE,(void *)&value);	
+	  if(apmib_update(CURRENT_SETTING) <= 0)
+         {
+           printf("apmib_update CURRENT_SETTING fail.\n");
+         }
+     }
+    }
+	  printf("%s_%d: \n",__FUNCTION__,__LINE__); 
+   }
+	printf("%s_%d: \n",__FUNCTION__,__LINE__);
+
+    /*response ack message to master*/
+	responseJSON = cJSON_CreateObject();
+	cJSON_AddStringToObject(responseJSON, "messageType", "5"); //4==KLINK_SALAVE_SEND_ACK_RESPONSE
+	pResponseMsg = cJSON_Print(responseJSON); 
+	printf("%s_%d:send version ack data [%s]  \n",__FUNCTION__,__LINE__,pResponseMsg);
+	send(fd , pResponseMsg, strlen(pResponseMsg) , 0 );
+	cJSON_Delete(responseJSON);	
+}
+
 int _slave klinkSlaveStateMaching(int sd,int messageType,cJSON *messageBody)
 {
+
  switch(messageType)
  {
-  case KLINK_START:
-     sendFwVersionMessageToMaster(sd); 
+  case KLINK_START:                     	//messageType=0
+     sendFwVersionMessageToMaster(sd); 		//messageType=1
 	 break;
-  case KLINK_MASTER_SEND_ACK_VERSION_INFO:
-     printf("=>get mast version ack");
+  case KLINK_MASTER_SEND_ACK_VERSION_INFO:  //messageType=2
+     printf("=>get_master_version_ack\n");
+	 break;
+  case KLINK_HEARD_BEAD_SYNC_MESSAGE:
+     sendHeardBeatMessage(sd);  
+	 break;
+   case KLINK_MASTER_SEND_LED_SWITCH_TO_SLAVE:
+     syncMasterLedSwitch(sd,messageBody); 
 	 break;
   default:
+  	/*if havn't incomming message,must period send beartbead*/ 
+  	 messageType=KLINK_HEARD_BEAD_SYNC_MESSAGE; 
   	 break;
  }
+
+  if(messageType==KLINK_MASTER_SEND_ACK_VERSION_INFO)
+   {
+     printf("%s_%d: slave prepare send heartBeat sync...\n",__FUNCTION__,__LINE__);
+     sendHeardBeatMessage(sd);   
+   }
 }
 
 void _slave parseMessageFromMaster(int sd, char* masterMessage) 
@@ -430,11 +540,10 @@ int main(int argc,char **argv)
     char recvbuf[1024] = {0};  
 	apmib_init();
 	
-	g_lastCheckTIme = upSecond();
+	g_lastSlaveCheckTime = upSecond();
     while (1)
 	{  
-	 if(upSecond() - g_lastCheckTIme > 5)
-	 {
+
         FD_SET(fd_stdin, &rset);  
         FD_SET(sock, &rset);  
 	   /*select return value:there is something readble message */
@@ -460,8 +569,6 @@ int main(int argc,char **argv)
 		   parseMessageFromMaster(sock, (char*)recvbuf);
            memset(recvbuf, 0, sizeof(recvbuf));  
         }  
-	  g_lastCheckTIme = upSecond();
-	}
 	sleep(1);
 #if 0
 		strcpy(sendbuf,"test");
