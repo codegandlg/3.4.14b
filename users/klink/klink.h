@@ -45,6 +45,7 @@ Description  :
 #define MAX_SLAVE_NUM              15
 #define ENUM_DEFAULT               0
 #define HEART_BEAT_TIME_SCHEDULE   5    /*seconds*/
+#define MESSAGE_BUFFER_SIZE        512
 
 typedef enum  
 {

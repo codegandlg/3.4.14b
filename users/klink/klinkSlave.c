@@ -399,48 +399,6 @@ int sendHeardBeatMessage(int fd)
 }
 
 
-/*
- * version formate:
-* {"messageType": "1","slaveVersion":{"slaveSoftVer":"WM V1.0.5","slaveMac":"001122334455"}}
-*/
-
-void _slave sendFwVersionMessageToMaster(int sd) 
-{
-	char macAddr[18]={0};
-	char fwVersion[18]={0};	
-	char* stringMessage=NULL;
-    cJSON *topRoot=NULL;
-	cJSON *root=NULL;
-	cJSON *parameters=NULL;
-	int localValue=1;
-	
-	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
-
-    if(apmib_get(MIB_FIRST_LOGIN,(void *)&localValue))
-    {
-     if(localValue!=1)
-     {
-      localValue=1;
-	  apmib_set(MIB_FIRST_LOGIN,(void *)&localValue);	
-	  if(apmib_update(CURRENT_SETTING) <= 0)
-         {
-           printf("apmib_update CURRENT_SETTING fail.\n");
-         }
-     }
-    }
-	
-    getSlaveVersionInfo(fwVersion, macAddr);	  
-	topRoot = cJSON_CreateObject();
-	cJSON_AddStringToObject(topRoot, "messageType", "1");//1==KLINK_SLAVE_SEND_VERSION_INFO
-	cJSON_AddItemToObject(topRoot, "slaveVersion", root = cJSON_CreateObject());
-	cJSON_AddStringToObject(root, "slaveSoftVer", fwVersion);
-	cJSON_AddStringToObject(root, "slaveMac", macAddr);
-	stringMessage = cJSON_Print(topRoot);  
-	printf("%s_%d:sen message=%s \n",__FUNCTION__,__LINE__,stringMessage);
-	send(sd, stringMessage,strlen(stringMessage), 0) ;
-	cJSON_Delete(topRoot);	
-}
-
 
 /*
  *led switch formate:
@@ -630,15 +588,133 @@ int syncUncrypWifiSettings(int fd, cJSON *messageBody)
 	system("init.sh ap bridge");
 }
 
+
+cJSON * generateMessageHeader(cJSON *root,int messageType)
+{   
+	cJSON *pJson=root;
+	char macAddr[18]={0};
+	char fwVersion[18]={0};	
+    getSlaveVersionInfo(fwVersion, macAddr);
+
+    switch (messageType)
+    {
+		  case KLINK_START: 					 
+		   cJSON_AddStringToObject(pJson, "messageType", "1");
+		   break;
+		case KLINK_MASTER_SEND_VERSION_ACK:  //messageType=2
+		   printf("=>get_master_version_ack\n");
+		   break;
+		case KLINK_HEARD_BEAD_SYNC_MESSAGE:
+		   cJSON_AddStringToObject(pJson, "messageType", "3");
+		   break;
+		 case KLINK_MASTER_SEND_LED_SWITCH_TO_SLAVE:
+		   cJSON_AddStringToObject(pJson, "messageType", "5");
+		   break;
+		 case KLINK_MASTER_SEND_UNENCRYP_WIFI_INFO_TO_SLAVE:
+		   cJSON_AddStringToObject(pJson, "messageType", "7");
+		   break; 
+		 case KLINK_MASTER_SEND_GUEST_WIFI_INFO_TO_SLAVE:	 
+		   cJSON_AddStringToObject(pJson, "messageType", "9");
+		   break;
+		default:
+		  /*if havn't incomming message,must period send beartbead*/ 
+		   messageType=KLINK_HEARD_BEAD_SYNC_MESSAGE; 
+		   break;
+    }
+		cJSON_AddStringToObject(pJson, "slaveMac", macAddr);
+	    return pJson;
+}
+
+const char* generateJsonMessageBody(int messageType,char** pMessage)
+{
+	char* stringMessage=NULL;
+    cJSON *topRoot=NULL;
+	cJSON *root=NULL;
+ 		  
+	topRoot = cJSON_CreateObject();
+	 if (!topRoot)
+    {
+        printf("cJsonCreateObj failed!");
+        return NULL;
+    }
+	 
+    /* generate header */
+    topRoot=generateMessageHeader(topRoot,messageType);
+ switch(messageType)
+ {
+    case KLINK_START:                     	//messageType=0
+     cJSON_AddItemToObject(topRoot, "slaveVersion", root = cJSON_CreateObject());
+	 cJSON_AddStringToObject(root, "slaveSoftVer", fwVersion);
+	 break;
+  case KLINK_MASTER_SEND_VERSION_ACK:  //messageType=2
+     printf("=>get_master_version_ack\n");
+	 break;
+  case KLINK_HEARD_BEAD_SYNC_MESSAGE:
+   //  sendHeardBeatMessage(sd);  
+	 break;
+   case KLINK_MASTER_SEND_LED_SWITCH_TO_SLAVE:
+     //syncMasterLedSwitch(sd,messageBody); 
+	 break;
+   case KLINK_MASTER_SEND_UNENCRYP_WIFI_INFO_TO_SLAVE:
+    // syncUncrypWifiSettings(sd,messageBody); 
+	 break; 
+   case KLINK_MASTER_SEND_GUEST_WIFI_INFO_TO_SLAVE:    
+    // syncGuestWifiSettings(sd,messageBody); 
+	 break;
+  default:
+  	/*if havn't incomming message,must period send beartbead*/ 
+  	 messageType=KLINK_HEARD_BEAD_SYNC_MESSAGE; 
+  	 break;
+ }
+ 	*pMessage = cJSON_Print(topRoot);  
+	cJSON_Delete(topRoot);	
+	return *pMessage;
+}
+
+/*
+ * version formate:
+* {"messageType": "1","slaveVersion":{"slaveSoftVer":"WM V1.0.5","slaveMac":"001122334455"}}
+*/
+
+void _slave slaveReportDeviceInfoToMaster(int sd, int messageType, cJSON *messageBody) 
+{
+	char *messageBuff;
+	char* stringMessage=NULL;
+    cJSON *topRoot=NULL;
+	cJSON *root=NULL;
+	cJSON *parameters=NULL;
+	int localValue=1;
+	
+	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+
+    if(apmib_get(MIB_FIRST_LOGIN,(void *)&localValue))
+    {
+     if(localValue!=1)
+     {
+      localValue=1;
+	  apmib_set(MIB_FIRST_LOGIN,(void *)&localValue);	
+	  if(apmib_update(CURRENT_SETTING) <= 0)
+         {
+           printf("apmib_update CURRENT_SETTING fail.\n");
+         }
+     }
+    }
+	
+    stringMessage=generateJsonMessageBody(messageType,&stringMessage);
+	printf("%s_%d:send message=%s \n",__FUNCTION__,__LINE__,stringMessage);
+	send(sd, stringMessage,strlen(stringMessage), 0) ;
+}
+
+
 int _slave klinkSlaveStateMaching(int sd,int messageType,cJSON *messageBody)
 {
 
  switch(messageType)
  {
-  case KLINK_START:                     	//messageType=0
-     sendFwVersionMessageToMaster(sd); 		//messageType=1
+  case KLINK_START:                     	          //messageType=0
+     slaveReportDeviceInfoToMaster(sd,messageType,messageBody);   //messageType=1
 	 break;
-  case KLINK_MASTER_SEND_VERSION_ACK:  //messageType=2
+  case KLINK_MASTER_SEND_VERSION_ACK:                 //messageType=2
      printf("=>get_master_version_ack\n");
 	 break;
   case KLINK_HEARD_BEAD_SYNC_MESSAGE:
