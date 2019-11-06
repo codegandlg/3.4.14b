@@ -172,6 +172,52 @@ int getGetwayIp(char gatewayIp[])
 		
 }
 
+
+int getGetwayIp2(char gatewayIp[])
+{
+   FILE *fp=NULL;
+   int i=0;
+   char *bufPtr1=NULL;
+   char *bufPtr2=NULL;
+   char buff[64]={0};
+   int lineNum = 0;
+  
+   fp=fopen("/etc/resolv.conf","r");
+   if(fp == NULL)
+        {
+          printf("open /etc/resolv.conf failed\n");     
+        return 1;
+        }
+   while(fgets(buff,64,fp))
+   {
+        lineNum++;
+        if(lineNum > 1)
+            break;
+        bufPtr1=strstr(buff,"nameserver");
+        if(bufPtr1)
+        {
+           bufPtr2 = bufPtr1 + 11;
+           i = 0;
+           while(*bufPtr2 != '\r' && *bufPtr2 != '\n')
+           {
+              gatewayIp[i] = *bufPtr2;
+              bufPtr2++;
+              i++;
+           }
+           gatewayIp[i] = '\0';
+	  //sysLog(LOG_NOTICE,"gatewayIp:%s\n",gatewayIp);   
+	 break;
+        }
+        else
+        {
+           fclose(fp);
+           return 1;
+        }
+   }
+   fclose(fp);
+   return 0;
+}
+
 int _slave parseMasterConf(int fd, cJSON *jason_obj)
 {
    cJSON *tasklist=jason_obj->child;
@@ -437,11 +483,81 @@ int syncMasterLedSwitch(int fd, cJSON *messageBody)
 	responseJSON = cJSON_CreateObject();
 	cJSON_AddStringToObject(responseJSON, "messageType", "5"); //4==KLINK_SALAVE_SEND_ACK_RESPONSE
 	pResponseMsg = cJSON_Print(responseJSON); 
-	printf("%s_%d:send version ack data [%s]  \n",__FUNCTION__,__LINE__,pResponseMsg);
+	printf("%s_%d:send led ack data [%s]  \n",__FUNCTION__,__LINE__,pResponseMsg);
 	send(fd , pResponseMsg, strlen(pResponseMsg) , 0 );
 	cJSON_Delete(responseJSON);	
 }
 
+
+
+/*
+ *guest wifi settings formate:
+ *{"message":"8","ledSwitch":{"ledEnable":"0"}}
+ *
+*/
+int syncGuestWifiSettings(int fd, cJSON *messageBody)
+{
+  printf("%s_%d: \n",__FUNCTION__,__LINE__);
+   cJSON *jasonObj=NULL;
+   char *pMessageBody=NULL;
+   int value=-1;
+   int localValue=1;
+   char *pResponseMsg=NULL;
+   cJSON *responseJSON=NULL;
+  /*for guest network*/
+  int disableFlg_2g;
+  int disableFlg_5g;
+  int old_wlan_idx;
+  int old_vwlan_idx;
+   if(jasonObj = cJSON_GetObjectItem(messageBody,"gustWifi"))
+   {
+
+   	  old_wlan_idx = wlan_idx;
+	  old_vwlan_idx = vwlan_idx;
+	  vwlan_idx = 2;
+      wlan_idx = 0;
+    printf("%s_%d: \n",__FUNCTION__,__LINE__);
+	 value=(strncmp(cJSON_GetObjectItem(jasonObj,"guestSwitch_5g")->valuestring, "0",1)?1:0);
+	  printf("%s_%d: value=%d\n",__FUNCTION__,__LINE__,value);
+     
+     if(apmib_get(MIB_WLAN_WLAN_DISABLED,(void *)&localValue))
+    {
+     if(localValue!=value)
+     {
+      localValue=value;
+	  apmib_set(MIB_WLAN_WLAN_DISABLED,(void *)&value);	
+     }
+    }
+
+	 wlan_idx = 1;
+	 value=(strncmp(cJSON_GetObjectItem(jasonObj,"guestSwitch_2g")->valuestring, "0",1)?1:0);
+	 printf("%s_%d: value=%d\n",__FUNCTION__,__LINE__,value);	   
+	  if(apmib_get(MIB_WLAN_WLAN_DISABLED,(void *)&localValue))
+	{
+	   if(localValue!=value)
+	   {
+		localValue=value;
+		apmib_set(MIB_WLAN_WLAN_DISABLED,(void *)&value); 
+	   }
+	}
+	if(apmib_update(CURRENT_SETTING) <= 0)
+	{
+	 printf("apmib_update CURRENT_SETTING fail.\n");
+	}    	 
+	 wlan_idx = old_wlan_idx;
+     vwlan_idx = old_vwlan_idx;
+   }
+	printf("%s_%d: \n",__FUNCTION__,__LINE__);
+
+    /*response ack message to master*/
+	responseJSON = cJSON_CreateObject();
+	cJSON_AddStringToObject(responseJSON, "messageType", "9"); //9==KLINK_SLAVE_SEND_GUEST_WIFI_SETTING_ACK
+	pResponseMsg = cJSON_Print(responseJSON); 
+	printf("%s_%d:send guest wifi ack data [%s]  \n",__FUNCTION__,__LINE__,pResponseMsg);
+	send(fd , pResponseMsg, strlen(pResponseMsg) , 0 );
+	cJSON_Delete(responseJSON);	
+    system("init.sh gw bridge");
+}
 
 
 /*
@@ -454,51 +570,53 @@ int syncUncrypWifiSettings(int fd, cJSON *messageBody)
   printf("%s_%d: \n",__FUNCTION__,__LINE__);
    cJSON *jasonObj=NULL;
    char *pMessageBody=NULL;
-   char ssidBuf[64]={0};
-   char ssid[64]={0};
-   ENCRYPT_T encrypt;   
+   char ssidBuf[64]={0};  
+   ENCRYPT_T encrypt_5g; 
+   char ssid_5g[64]={0};
+   ENCRYPT_T encrypt_2g; 
+   char ssid_2g[64]={0};
    int value=-1;
    int localValue=1;
    int ret=0;
    char *pResponseMsg=NULL;
    cJSON *responseJSON=NULL;
+    int old_wlan_idx;
+    int old_vwlan_idx;
+	int settingFlag=0;
 
    if(jasonObj = cJSON_GetObjectItem(messageBody,"uncrypWifiSetting"))
    {
     printf("%s_%d: \n",__FUNCTION__,__LINE__);
 
-     if(apmib_get(MIB_WLAN_ENCRYPT,(void *)&encrypt))
-    {
-     if(encrypt!=ENCRYPT_DISABLED)
-     {
-      encrypt=ENCRYPT_DISABLED;
-	  apmib_set(MIB_WLAN_ENCRYPT, (void *)&encrypt);
-	  ret=1;
-	  if(apmib_update(CURRENT_SETTING) <= 0)
-         {
-           printf("apmib_update CURRENT_SETTING fail.\n");
-         }
-     }
-    }
-    printf("%s_%d: \n",__FUNCTION__,__LINE__); 
-	if(apmib_get(MIB_WLAN_SSID,(void *)&ssidBuf))
-    {
-     if(strcmp(ssidBuf,cJSON_GetObjectItem(jasonObj,"ledEnable")->valuestring))
-     {
-      strcpy(ssid,ssidBuf);
-	  apmib_set(MIB_WLAN_SSID, (void *)&ssid);	
-	  ret=1;
 
-     }
-    }
-	if(ret==1)
+	old_wlan_idx = wlan_idx;
+	old_vwlan_idx = vwlan_idx;
+	vwlan_idx = 0;
+    wlan_idx = 0;
+	encrypt_5g=atoi(cJSON_GetObjectItem(jasonObj,"encrypt_5g")->valuestring);
+	strcpy(ssid_5g,cJSON_GetObjectItem(jasonObj,"ssid_5g")->valuestring);
+	if(encrypt_5g==ENCRYPT_DISABLED)
 	{
-	 if(apmib_update(CURRENT_SETTING) <= 0)
-        {
-           printf("apmib_update CURRENT_SETTING fail.\n");
-        }
-	  
+	 apmib_set(MIB_WLAN_ENCRYPT, (void *)&encrypt_5g);
+	 apmib_set(MIB_WLAN_SSID, (void *)&ssid_5g);	
 	}
+    
+	wlan_idx = 1;
+	encrypt_2g=atoi(cJSON_GetObjectItem(jasonObj,"encrypt_2g")->valuestring);
+	strcpy(ssid_2g,cJSON_GetObjectItem(jasonObj,"ssid_2g")->valuestring);
+	if(encrypt_2g==ENCRYPT_DISABLED)
+	{
+	apmib_set(MIB_WLAN_ENCRYPT, (void *)&encrypt_2g);
+	apmib_set(MIB_WLAN_SSID, (void *)&ssid_2g);	
+	}
+
+	if(apmib_update(CURRENT_SETTING) <= 0)
+    {
+      printf("apmib_update CURRENT_SETTING fail.\n");
+    }
+ 
+	 wlan_idx = old_wlan_idx;
+     vwlan_idx = old_vwlan_idx;
    }
 	printf("%s_%d: \n",__FUNCTION__,__LINE__);
 
@@ -509,6 +627,7 @@ int syncUncrypWifiSettings(int fd, cJSON *messageBody)
 	printf("%s_%d:send version ack data [%s]  \n",__FUNCTION__,__LINE__,pResponseMsg);
 	send(fd , pResponseMsg, strlen(pResponseMsg) , 0 );
 	cJSON_Delete(responseJSON);	
+	system("init.sh ap bridge");
 }
 
 int _slave klinkSlaveStateMaching(int sd,int messageType,cJSON *messageBody)
@@ -519,7 +638,7 @@ int _slave klinkSlaveStateMaching(int sd,int messageType,cJSON *messageBody)
   case KLINK_START:                     	//messageType=0
      sendFwVersionMessageToMaster(sd); 		//messageType=1
 	 break;
-  case KLINK_MASTER_SEND_ACK_VERSION_INFO:  //messageType=2
+  case KLINK_MASTER_SEND_VERSION_ACK:  //messageType=2
      printf("=>get_master_version_ack\n");
 	 break;
   case KLINK_HEARD_BEAD_SYNC_MESSAGE:
@@ -531,13 +650,16 @@ int _slave klinkSlaveStateMaching(int sd,int messageType,cJSON *messageBody)
    case KLINK_MASTER_SEND_UNENCRYP_WIFI_INFO_TO_SLAVE:
      syncUncrypWifiSettings(sd,messageBody); 
 	 break; 
+   case KLINK_MASTER_SEND_GUEST_WIFI_INFO_TO_SLAVE:    
+     syncGuestWifiSettings(sd,messageBody); 
+	 break;
   default:
   	/*if havn't incomming message,must period send beartbead*/ 
   	 messageType=KLINK_HEARD_BEAD_SYNC_MESSAGE; 
   	 break;
  }
 
-  if(messageType==KLINK_MASTER_SEND_ACK_VERSION_INFO)
+  if(messageType==KLINK_MASTER_SEND_VERSION_ACK)
    {
      printf("%s_%d: slave prepare send heartBeat sync...\n",__FUNCTION__,__LINE__);
      sendHeardBeatMessage(sd);   
@@ -572,6 +694,7 @@ int main(int argc,char **argv)
 	char ip[16]={0};
 	static int messagetype=0;
 	int routeTableFlag=-1;
+	int routeTableFlag2=-1;
 	struct in_addr gwAddr;
     fd_set rset;
     FD_ZERO(&rset);
@@ -582,7 +705,8 @@ int main(int argc,char **argv)
     //struct hostent *h = gethostbyname(argv[1]);
     //server_addr.sin_addr = *((struct in_addr *)h->h_addr);
     routeTableFlag=getGetwayIp(ip);
-	if(routeTableFlag!=0)
+	routeTableFlag2=getGetwayIp2(ip);
+	if((routeTableFlag!=0)&&(routeTableFlag2!=0))
 	{
 	 printf("%s_%d:get gateway ip fail\n",__FUNCTION__,__LINE__);
 	 return 0;
