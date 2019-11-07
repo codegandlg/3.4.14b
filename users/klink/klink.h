@@ -19,8 +19,8 @@ Modifier     :
 Description  : 
 
 */
+#include "apmib.h"
 
-/* define exit() codes if not provided */
 #ifndef EXIT_FAILURE		
 #define EXIT_FAILURE               1
 #endif
@@ -57,7 +57,7 @@ typedef enum
 {
   KLINK_START=ENUM_DEFAULT,
   	
-  KLINK_SLAVE_SEND_VERSION_INFO=1,   
+  KLINK_SLAVE_REPORT_DEVICE_INFO=1,   
   KLINK_MASTER_SEND_VERSION_ACK=2,    
 
   KLINK_HEARD_BEAD_SYNC_MESSAGE=3,   
@@ -70,10 +70,10 @@ typedef enum
 
   KLINK_MASTER_SEND_GUEST_WIFI_INFO_TO_SLAVE=8, 
   KLINK_SLAVE_SEND_GUEST_WIFI_SETTING_ACK=9, 
-
-  
   
 }klinkMsgStateMachine_t;  
+
+
 
 typedef enum 
 {
@@ -88,16 +88,56 @@ typedef struct KlinkSlaveVersion
 	char slaveMac[18];
 }KlinkSlaveVersion_t;
 
+typedef struct KlinkSlaveDeviceInfo
+{
+	char slaveFwVersion[18];
+	char slaveMacAddr[18];
+}KlinkSlaveDeviceInfo_t;
+
+
+typedef struct uncryptWifiSetting
+{
+ ENCRYPT_T encryptMode_2g;
+ char uncryptSsid_2g[64]; 
+ ENCRYPT_T encryptMode_5g;
+ char uncryptSsid_5g[64];
+ int uncryptWifiSyncFlag;
+}uncryptWifiSetting_t;
+
+typedef struct guestWifiSeting
+{
+ int guestWifiwitch_5g;
+ int guestWifiSwitch_2g;
+ int guestSyncFlag;
+}guestWifiSetting_t;
+
+typedef struct meshSeting
+{
+ int ledSwitch;
+ uncryptWifiSetting_t uncriptWifi;
+ guestWifiSetting_t guestWifi;
+}meshSetting_t;
+
+//static meshSetting_t g_syncSettings;
 
 /*klink node struct*/
 typedef struct KlinkNode
 {
-    int slaveMeshNum;
-	KlinkSlaveVersion_t slaveVersionInfo;
+    /*klink message header*/
+    klinkMsgStateMachine_t klinkMsgStaMachine;
+	char sourceMac[18];
+	char destMac[18];
+
+	/*klink message body*/
+	KlinkSlaveDeviceInfo_t slaveDevideInfo;
+	meshSetting_t syncCfg;	
+	
+    int slaveMeshNum;	
+	KlinkSlaveVersion_t slaveVersionInfo; 
 	klinkDataType_t dataType;
-	klinkMsgStateMachine_t stateMachine;
 	struct KlinkNode *next;
 }KlinkNode_t;
+
 
 
 /*

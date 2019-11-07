@@ -29,48 +29,35 @@ Description  :
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
+#include<net/if_arp.h>
+#include<sys/ioctl.h>
+#include <net/route.h>
+#include <net/if.h>
 #include <time.h>
 #include "cJSON.h"
 #include "klink.h"
-#include "apmib.h"
 
-extern char *etherAddrToString(etherAddr_t *ether, int type);
+
+
 extern KlinkNode_t* initKlinkListHead();
 extern KlinkNode_t *addKlinkListNode(KlinkNode_t*head,char* date,int type);
 extern KlinkNode_t* serchKlinkListNode(KlinkNode_t*head,char*  date);
 extern KlinkNode_t* deletKlinkListNode(KlinkNode_t*head,char* date);
 extern void showKlinkNode(KlinkNode_t*head);
-extern KlinkNode_t* g_pKlinkHead;
-extern KlinkNode_t klinkNodeData;
+//extern KlinkNode_t* g_pKlinkHead;
+//extern KlinkNode_t klinkNodeData;
 static unsigned int g_lastMasterCheckTime = 0;
 static unsigned int g_lastCheckTIme = 0;
 static unsigned int g_ledSyncState = 1;
 static unsigned int g_unCrypWifiSyncState = 1; //0-needn't synnc    1-sync is needed
 static unsigned int g_guestWifiState=1;
 
-typedef struct uncryptWifiSetting
-{
- ENCRYPT_T encryptMode_2g;
- char uncryptSsid_2g[64]; 
- ENCRYPT_T encryptMode_5g;
- char uncryptSsid_5g[64]; 
-}uncryptWifiSetting_t;
+static KlinkNode_t g_klinDataPkts;
+static KlinkNode_t* g_pKlinkHead = NULL;
+KlinkNode_t klinkNodeData;
+KlinkNode_t g_syncSettings;
+static char masterMac[17]={0};
 
-typedef struct guestWifiSeting
-{
- int guestWifiwitch_5g;
- int guestWifiSwitch_2g;
-}guestWifiSetting_t;
-
-typedef struct meshSeting
-{
- int ledSwitch;
- uncryptWifiSetting_t uncriptWifi;
- guestWifiSetting_t guestWifi;
- 
-}meshSetting_t;
-
-static meshSetting_t g_syncSettings;
 
 
 unsigned int upSecond(void)
@@ -78,6 +65,115 @@ unsigned int upSecond(void)
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);	
 	return ts.tv_sec;
+}
+
+
+static *etherAddrToString(etherAddr_t *ether, int type)
+{
+    static char buffer[8][64];
+    static int buffer_index = 0;
+
+    if (buffer_index >= sizeof(buffer)/sizeof(buffer[0]) - 1)
+    {
+        buffer_index = 0;
+    }
+    else 
+    {
+        buffer_index ++;
+    }
+
+    if (type == ETHER_TYPE_DEFAULT)
+    {
+        type = ETHER_ADDR_TYPE_DEFAULT;
+    }
+    
+    switch(type)
+    {
+        case ETHER_TYPE_NO_SEPARTOR:
+            sprintf(buffer[buffer_index], "%02x%02x%02x%02x%02x%02x", 
+                ether->octet[0], ether->octet[1], ether->octet[2],
+                ether->octet[3], ether->octet[4], ether->octet[5]);
+            break;
+        case ETHER_TYPE_ONE_COLON:
+            sprintf(buffer[buffer_index], "%02x%02x%02x:%02x%02x%02x", 
+                ether->octet[0], ether->octet[1], ether->octet[2],
+                ether->octet[3], ether->octet[4], ether->octet[5]);  
+            break;
+        case ETHER_TYPE_ONE_DASH:
+            sprintf(buffer[buffer_index], "%02x%02x%02x-%02x%02x%02x", 
+                ether->octet[0], ether->octet[1], ether->octet[2],
+                ether->octet[3], ether->octet[4], ether->octet[5]);  
+            break;            
+        case ETHER_TYPE_TWO_COLON:
+            sprintf(buffer[buffer_index], "%02x%02x:%02x%02x:%02x%02x", 
+                ether->octet[0], ether->octet[1], ether->octet[2],
+                ether->octet[3], ether->octet[4], ether->octet[5]);  
+            break;            
+        case ETHER_TYPE_TWO_DASH:
+            sprintf(buffer[buffer_index], "%02x%02x-%02x%02x-%02x%02x", 
+                ether->octet[0], ether->octet[1], ether->octet[2],
+                ether->octet[3], ether->octet[4], ether->octet[5]);  
+            break;            
+        case ETHER_TYPE_FIVE_COLON:
+            sprintf(buffer[buffer_index], "%02x:%02x:%02x:%02x:%02x:%02x", 
+                ether->octet[0], ether->octet[1], ether->octet[2],
+                ether->octet[3], ether->octet[4], ether->octet[5]);  
+            break;            
+        case ETHER_TYPE_FIVE_DASH:
+            sprintf(buffer[buffer_index], "%02x%02x%02x%02x%02x%02x", 
+                ether->octet[0], ether->octet[1], ether->octet[2],
+                ether->octet[3], ether->octet[4], ether->octet[5]);  
+            break;
+        default:
+            sprintf(buffer[buffer_index], "%02x%02x%02x%02x%02x%02x", 
+                ether->octet[0], ether->octet[1], ether->octet[2],
+                ether->octet[3], ether->octet[4], ether->octet[5]);  
+            break;            
+    }
+    
+    return buffer[buffer_index];
+}
+
+static int getNetifHwAddr(const char *ifname, etherAddr_t *hwaddr)
+{
+	int sock, ret;
+	struct ifreq ifr;
+
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if(sock < 0) 
+    {   
+        return -1;
+    }
+
+	memset(&ifr, 0, sizeof(struct ifreq));
+	strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name) - 1);
+    
+	ret = ioctl(sock, SIOCGIFHWADDR, &ifr);
+
+	if(!ret && hwaddr)
+    {
+        memcpy(hwaddr, ifr.ifr_hwaddr.sa_data, sizeof(etherAddr_t));
+    }
+
+	close(sock);
+    
+	return (ret < 0) ? -1 : 0;
+}
+
+static int  getMacAddr( char *pWanHWAddr)
+{
+ 	struct sockaddr hwaddr;
+	etherAddr_t addr;
+	unsigned char *pMacAddr;
+	if (!(getNetifHwAddr(KLINK_IF, &addr)) ) 
+	{
+	 sprintf(pWanHWAddr, "%s",etherAddrToString(&addr, ETHER_TYPE_NO_SEPARTOR));
+	}
+	else
+	{
+		sprintf(pWanHWAddr,"%s","00:00:00:00:00:00");
+	}
+	return 0;
 }
 
 
@@ -134,7 +230,6 @@ KlinkNode_t* createKlinkLinkList()
  if(fp == NULL)
  {
   printf("==>%s_%d:open /tmp/topology_json fail...",__FUNCTION__,__LINE__);
-  return RETURN_FAIL;
  }
  else
  {
@@ -155,7 +250,7 @@ KlinkNode_t* createKlinkLinkList()
   }
    else
    {
-    return RETURN_FAIL;
+    printf("==>%s_%d:line value is null..",__FUNCTION__,__LINE__);
    }
 
  }
@@ -539,13 +634,182 @@ int backupCurrentCfg(int messageType)
  }
   
 }
-int klinkMasterStateMaching(int sd,int messageType,cJSON *messageBody)
+
+void cjsonToMessageNode(cJSON *messageBody,KlinkNode_t *messageNode)
 {
-  meshSetting_t *pCfg = &g_syncSettings;
+ cJSON*jasonObj=NULL;
+ int messageType;
+ messageType=atoi(cJSON_GetObjectItem(messageBody,"messageType")->valuestring);
+ messageNode->klinkMsgStaMachine=messageType;
+  switch(messageType)
+ {
+  case KLINK_SLAVE_REPORT_DEVICE_INFO:
+  	{
+  	strcpy(messageNode->slaveDevideInfo.slaveMacAddr,cJSON_GetObjectItem(messageBody,"sourceMac")->valuestring);
+	if(jasonObj = cJSON_GetObjectItem(messageBody,"slaveVersion"))
+	 {
+      strcpy(messageNode->slaveDevideInfo.slaveFwVersion,cJSON_GetObjectItem(jasonObj,"slaveSoftVer")->valuestring);
+     }  
+  	}
+	 break;
+  case KLINK_HEARD_BEAD_SYNC_MESSAGE:
+     printf("=>get slave heard bead \n");
+	 break;
+  case KLINK_SALAVE_SEND_LED_SWITCH_ACK:
+  	backupCurrentCfg(messageType);
+  	g_ledSyncState=0;
+    printf("=>get slave led switch ack\n");
+	 break;
+    case KLINK_SLAVE_SEND_UNCRYPT_WIFI_SETTING_ACK:
+	backupCurrentCfg(messageType);
+	g_unCrypWifiSyncState=0;
+    printf("=>get uncrypt wifi setting ack\n");
+	 break;
+	case KLINK_SLAVE_SEND_GUEST_WIFI_SETTING_ACK:	 
+	backupCurrentCfg(messageType);	
+	g_guestWifiState=0;
+    printf("=>get uncrypt wifi setting ack\n");
+	 break;	
+  default:
+  	 break;
+ }
+}
+
+
+
+cJSON * masterGenerateMessageHeader(cJSON *root,int messageType)
+{   
+	cJSON *pJson=root;
+	char macAddr[18]={0};
+	char fwVersion[18]={0};	
+
+    switch (messageType)
+    {
+        case KLINK_START:
+			cJSON_AddStringToObject(pJson, "messageType", "1");
+			break;	
+		case KLINK_SLAVE_REPORT_DEVICE_INFO: 					 
+		   cJSON_AddStringToObject(pJson, "messageType", "2");
+		   break;
+		case KLINK_HEARD_BEAD_SYNC_MESSAGE:
+		   printf("=>get slave heard bead \n");
+		   break;
+		case KLINK_SALAVE_SEND_LED_SWITCH_ACK:
+		  backupCurrentCfg(messageType);
+		  g_ledSyncState=0;
+		  printf("=>get slave led switch ack\n");
+		   break;
+		  case KLINK_SLAVE_SEND_UNCRYPT_WIFI_SETTING_ACK:
+		  backupCurrentCfg(messageType);
+		  g_unCrypWifiSyncState=0;
+		  printf("=>get uncrypt wifi setting ack\n");
+		   break;
+		  case KLINK_SLAVE_SEND_GUEST_WIFI_SETTING_ACK:
+		   printf("===>>>%s_%d: messageType=%d \n",__FUNCTION__,__LINE__,messageType);	   
+		  backupCurrentCfg(messageType);  
+		  g_guestWifiState=0;
+		  printf("=>get uncrypt wifi setting ack\n");
+		   break; 
+		default:
+		   break;
+    }
+		cJSON_AddStringToObject(pJson, "sourceMac", masterMac);	
+	    return pJson;
+}
+
+const char* masterGenerateJsonMessageBody(int messageType,char** pMessage)
+{
+	char* stringMessage=NULL;
+    cJSON *topRoot=NULL;
+	cJSON *root=NULL;
+ 		  
+	topRoot = cJSON_CreateObject();
+	 if (!topRoot)
+    {
+        printf("cJsonCreateObj failed!");
+        return NULL;
+    }
+	 
+    /* generate header */
+    topRoot=masterGenerateMessageHeader(topRoot,messageType);
  switch(messageType)
  {
-  case KLINK_SLAVE_SEND_VERSION_INFO:
-     parseSlaveVersionConf(sd,messageBody); //parse version then sent ack messageType=2
+  case KLINK_SLAVE_REPORT_DEVICE_INFO:                     	//messageType=0
+     cJSON_AddItemToObject(topRoot, "slaveVersion", root = cJSON_CreateObject());
+	// cJSON_AddStringToObject(root, "slaveSoftVer", fwVersion);
+	 break;
+  case KLINK_HEARD_BEAD_SYNC_MESSAGE:
+     printf("=>get slave heard bead \n");
+	 break;
+  case KLINK_SALAVE_SEND_LED_SWITCH_ACK:
+  	backupCurrentCfg(messageType);
+  	g_ledSyncState=0;
+    printf("=>get slave led switch ack\n");
+	 break;
+    case KLINK_SLAVE_SEND_UNCRYPT_WIFI_SETTING_ACK:
+	backupCurrentCfg(messageType);
+	g_unCrypWifiSyncState=0;
+    printf("=>get uncrypt wifi setting ack\n");
+	 break;
+	case KLINK_SLAVE_SEND_GUEST_WIFI_SETTING_ACK:
+	 printf("===>>>%s_%d: messageType=%d \n",__FUNCTION__,__LINE__,messageType);	 
+	backupCurrentCfg(messageType);	
+	g_guestWifiState=0;
+    printf("=>get uncrypt wifi setting ack\n");
+	 break;	
+  default:
+  	 break;
+ }
+ 	*pMessage = cJSON_Print(topRoot);  
+	cJSON_Delete(topRoot);	
+	return *pMessage;
+}
+
+int addSlaveDeviceInfoToLinkList(int fd, cJSON *messageBody,KlinkNode_t *messageNode)
+{
+   cJSON *jasonObj=NULL;
+   char *pMessageBody=NULL;
+   char *pSlaveFwVersion=NULL;
+   char *pSlaveMac=NULL;
+   KlinkNode_t* pKlinkHead=NULL;
+   KlinkNode_t* pKlinkData=&klinkNodeData;
+   memset(&g_klinDataPkts, 0, sizeof(g_klinDataPkts));
+   KlinkNode_t *messageDevice=messageNode;
+   char *pResponseMsg=NULL;
+   cJSON *responseJSON=NULL;
+   printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+
+   cjsonToMessageNode(messageBody,messageNode);
+   addKlinkListNode_1(g_pKlinkHead,messageNode);
+#if 0
+   if(jasonObj = cJSON_GetObjectItem(messageBody,"slaveVersion"))
+   {
+    strcpy(pKlinkData->slaveVersionInfo.slaveSoftVer,cJSON_GetObjectItem(jasonObj,"slaveSoftVer")->valuestring);
+    strcpy(pKlinkData->slaveVersionInfo.slaveMac,cJSON_GetObjectItem(jasonObj,"slaveMac")->valuestring);
+   }
+
+   pKlinkHead=createKlinkLinkList();
+   addKlinkListNode(pKlinkHead,pKlinkData,KLINK_SLAVE_SOFT_VERSION);
+   showKlinkNode(pKlinkHead);
+   setMeshLinklistDataToMib(pKlinkHead);
+ #endif
+    /*rend ack message to slave*/
+	responseJSON = cJSON_CreateObject();
+	cJSON_AddStringToObject(responseJSON, "messageType", "2"); //2==KLINK_MASTER_SEND_ACK_VERSION_INFO
+	pResponseMsg = cJSON_Print(responseJSON); 
+	printf("%s_%d:send version ack data [%s]  \n",__FUNCTION__,__LINE__,pResponseMsg);
+	send(fd , pResponseMsg, strlen(pResponseMsg) , 0 );
+	cJSON_Delete(responseJSON);	
+}
+
+int klinkMasterStateMaching(int sd,int messageType,cJSON *messageBody)
+{
+  memset(&g_klinDataPkts, 0, sizeof(g_klinDataPkts));
+  //meshSetting_t *pCfg = &g_syncSettings;
+ switch(messageType)
+ {
+  case KLINK_SLAVE_REPORT_DEVICE_INFO:
+     addSlaveDeviceInfoToLinkList(sd,messageBody,&g_klinDataPkts); //parse version then sent ack messageType=2
 	 break;
   case KLINK_HEARD_BEAD_SYNC_MESSAGE:
      printf("=>get slave heard bead \n");
@@ -578,7 +842,7 @@ int klinkMasterStateMaching(int sd,int messageType,cJSON *messageBody)
  return 0;
 }
 
-void parseMessageFromSlave(int sd, char* slaveMessage) 
+int parseMessageFromSlave(int sd, char* slaveMessage) 
 {
 
     cJSON *pJson=NULL;
@@ -595,24 +859,50 @@ void parseMessageFromSlave(int sd, char* slaveMessage)
       /*{"slaveVersion":["messageType":"0"{"slaveSoftVer":"WM V1.0.5","slaveMac":"00:11:22:33:44:55"}]}*/
      //if(jason_obj = cJSON_GetObjectItem(json,"slaveVersion"))	
     messageType = atoi(cJSON_GetObjectItem(pJson,"messageType")->valuestring);	
+	if(messageType>=1)
+	  {
+	    /*if dest mac not equal,it means message not send to mine,exit*/
+	    if(strcmp(cJSON_GetObjectItem(pJson,"destMac")->valuestring,masterMac))
+		return 0;
+	  }
 	klinkMasterStateMaching(sd,messageType,pJson);
     }
+	return 0;
 }
 
+const char* klinkStartMessageBody(int messageType,char** pMessage)
+{
+	char* stringMessage=NULL;
+    cJSON *topRoot=NULL;
+	cJSON *root=NULL;
+ 		  
+	topRoot = cJSON_CreateObject();
+	 if (!topRoot)
+    {
+        printf("cJsonCreateObj failed!");
+        return NULL;
+    }
+	 
+    topRoot=masterGenerateMessageHeader(topRoot,messageType);
+ 	*pMessage = cJSON_Print(topRoot);  
+	cJSON_Delete(topRoot);	
+	return *pMessage;
+}
 
 int main(int argc , char *argv[])
 {
     int opt = TRUE;
+	char *message=NULL;
     int masterSocket , addrlen , newSocket , clientSocket[30] , maxClients = 30 , activity, i , valread , sd;
     int maxSd;
     struct sockaddr_in address;
       
     char buffer[1025];  //data buffer of 1K
-    memset(&g_syncSettings, 0, sizeof(g_syncSettings));
-      
     /*set of socket descriptors*/
     fd_set readfds;
-    char *message = "{\"messageType\":\"0\"}";
+    memset(&g_syncSettings, 0, sizeof(g_syncSettings));
+	getMacAddr(masterMac);     
+    message = klinkStartMessageBody(KLINK_START,&message);
 
     /*initialise all clientSocket[] to 0 so not checked*/
     for (i = 0; i < maxClients; i++) 
@@ -660,6 +950,8 @@ int main(int argc , char *argv[])
 
 	//g_pKlinkHead=initKlinkListHead();
 	 g_lastMasterCheckTime = upSecond();
+	 g_pKlinkHead=initKlinkListHead(); 
+     clearKlinkList(g_pKlinkHead);  
     while(TRUE) 
     {
         /*clear the socket set*/

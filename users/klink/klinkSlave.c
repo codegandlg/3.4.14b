@@ -50,6 +50,7 @@ Description  :
 
 static unsigned int g_lastSlaveCheckTime = 0;
 extern char *fwVersion;
+static char slaveMac[17]={0};
 
 
 
@@ -105,6 +106,116 @@ unsigned int upSecond(void)
 	clock_gettime(CLOCK_MONOTONIC, &ts);	
 	return ts.tv_sec;
 }
+
+ 
+ static *etherAddrToString(etherAddr_t *ether, int type)
+ {
+	 static char buffer[8][64];
+	 static int buffer_index = 0;
+ 
+	 if (buffer_index >= sizeof(buffer)/sizeof(buffer[0]) - 1)
+	 {
+		 buffer_index = 0;
+	 }
+	 else 
+	 {
+		 buffer_index ++;
+	 }
+ 
+	 if (type == ETHER_TYPE_DEFAULT)
+	 {
+		 type = ETHER_ADDR_TYPE_DEFAULT;
+	 }
+	 
+	 switch(type)
+	 {
+		 case ETHER_TYPE_NO_SEPARTOR:
+			 sprintf(buffer[buffer_index], "%02x%02x%02x%02x%02x%02x", 
+				 ether->octet[0], ether->octet[1], ether->octet[2],
+				 ether->octet[3], ether->octet[4], ether->octet[5]);
+			 break;
+		 case ETHER_TYPE_ONE_COLON:
+			 sprintf(buffer[buffer_index], "%02x%02x%02x:%02x%02x%02x", 
+				 ether->octet[0], ether->octet[1], ether->octet[2],
+				 ether->octet[3], ether->octet[4], ether->octet[5]);  
+			 break;
+		 case ETHER_TYPE_ONE_DASH:
+			 sprintf(buffer[buffer_index], "%02x%02x%02x-%02x%02x%02x", 
+				 ether->octet[0], ether->octet[1], ether->octet[2],
+				 ether->octet[3], ether->octet[4], ether->octet[5]);  
+			 break; 		   
+		 case ETHER_TYPE_TWO_COLON:
+			 sprintf(buffer[buffer_index], "%02x%02x:%02x%02x:%02x%02x", 
+				 ether->octet[0], ether->octet[1], ether->octet[2],
+				 ether->octet[3], ether->octet[4], ether->octet[5]);  
+			 break; 		   
+		 case ETHER_TYPE_TWO_DASH:
+			 sprintf(buffer[buffer_index], "%02x%02x-%02x%02x-%02x%02x", 
+				 ether->octet[0], ether->octet[1], ether->octet[2],
+				 ether->octet[3], ether->octet[4], ether->octet[5]);  
+			 break; 		   
+		 case ETHER_TYPE_FIVE_COLON:
+			 sprintf(buffer[buffer_index], "%02x:%02x:%02x:%02x:%02x:%02x", 
+				 ether->octet[0], ether->octet[1], ether->octet[2],
+				 ether->octet[3], ether->octet[4], ether->octet[5]);  
+			 break; 		   
+		 case ETHER_TYPE_FIVE_DASH:
+			 sprintf(buffer[buffer_index], "%02x%02x%02x%02x%02x%02x", 
+				 ether->octet[0], ether->octet[1], ether->octet[2],
+				 ether->octet[3], ether->octet[4], ether->octet[5]);  
+			 break;
+		 default:
+			 sprintf(buffer[buffer_index], "%02x%02x%02x%02x%02x%02x", 
+				 ether->octet[0], ether->octet[1], ether->octet[2],
+				 ether->octet[3], ether->octet[4], ether->octet[5]);  
+			 break; 		   
+	 }
+	 
+	 return buffer[buffer_index];
+ }
+ 
+ static int getNetifHwAddr(const char *ifname, etherAddr_t *hwaddr)
+ {
+	 int sock, ret;
+	 struct ifreq ifr;
+ 
+	 sock = socket(AF_INET, SOCK_STREAM, 0);
+	 if(sock < 0) 
+	 {	 
+		 return -1;
+	 }
+ 
+	 memset(&ifr, 0, sizeof(struct ifreq));
+	 strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name) - 1);
+	 
+	 ret = ioctl(sock, SIOCGIFHWADDR, &ifr);
+ 
+	 if(!ret && hwaddr)
+	 {
+		 memcpy(hwaddr, ifr.ifr_hwaddr.sa_data, sizeof(etherAddr_t));
+	 }
+ 
+	 close(sock);
+	 
+	 return (ret < 0) ? -1 : 0;
+ }
+ 
+ static int  getMacAddr( char *pWanHWAddr)
+ {
+	 struct sockaddr hwaddr;
+	 etherAddr_t addr;
+	 unsigned char *pMacAddr;
+	 if (!(getNetifHwAddr(KLINK_IF, &addr)) ) 
+	 {
+	  sprintf(pWanHWAddr, "%s",etherAddrToString(&addr, ETHER_TYPE_NO_SEPARTOR));
+	 }
+	 else
+	 {
+		 sprintf(pWanHWAddr,"%s","00:00:00:00:00:00");
+	 }
+	 return 0;
+ }
+
 
 #define zeroIp(ip) ((ip)->s_addr == 0)
 
@@ -228,143 +339,6 @@ int _slave parseMasterConf(int fd, cJSON *jason_obj)
     tasklist=tasklist->next;
    }
 		
-}
-
-
-int getMacAddr( char *interface, void *pAddr )
-{
-    struct ifreq ifr;
-    int skfd, found=0;
-	struct sockaddr_in *addr;
-    skfd = socket(AF_INET, SOCK_DGRAM, 0);
-
-    strcpy(ifr.ifr_name, interface);
-    if (ioctl(skfd, SIOCGIFFLAGS, &ifr) < 0){
-    		close( skfd );
-		return (0);
-	}
-    if (ioctl(skfd, SIOCGIFHWADDR, &ifr) >= 0) {
-		memcpy(pAddr, &ifr.ifr_hwaddr, sizeof(struct sockaddr));
-		found = 1;
-	}
-    else {    	
-    	if (ioctl(skfd, SIOCGIFDSTADDR, &ifr) >= 0) {
-		addr = ((struct sockaddr_in *)&ifr.ifr_addr);
-		*((struct in_addr *)pAddr) = *((struct in_addr *)&addr->sin_addr);
-		found = 1;
-	}
-    	
-    }
-    close( skfd );
-    return found;
-}
-
-char *etherAddrToString(etherAddr_t *ether, int type)
-{
-    static char buffer[8][64];
-    static int buffer_index = 0;
-
-    if (buffer_index >= sizeof(buffer)/sizeof(buffer[0]) - 1)
-    {
-        buffer_index = 0;
-    }
-    else 
-    {
-        buffer_index ++;
-    }
-
-    if (type == ETHER_TYPE_DEFAULT)
-    {
-        type = ETHER_ADDR_TYPE_DEFAULT;
-    }
-    
-    switch(type)
-    {
-        case ETHER_TYPE_NO_SEPARTOR:
-            sprintf(buffer[buffer_index], "%02x%02x%02x%02x%02x%02x", 
-                ether->octet[0], ether->octet[1], ether->octet[2],
-                ether->octet[3], ether->octet[4], ether->octet[5]);
-            break;
-        case ETHER_TYPE_ONE_COLON:
-            sprintf(buffer[buffer_index], "%02x%02x%02x:%02x%02x%02x", 
-                ether->octet[0], ether->octet[1], ether->octet[2],
-                ether->octet[3], ether->octet[4], ether->octet[5]);  
-            break;
-        case ETHER_TYPE_ONE_DASH:
-            sprintf(buffer[buffer_index], "%02x%02x%02x-%02x%02x%02x", 
-                ether->octet[0], ether->octet[1], ether->octet[2],
-                ether->octet[3], ether->octet[4], ether->octet[5]);  
-            break;            
-        case ETHER_TYPE_TWO_COLON:
-            sprintf(buffer[buffer_index], "%02x%02x:%02x%02x:%02x%02x", 
-                ether->octet[0], ether->octet[1], ether->octet[2],
-                ether->octet[3], ether->octet[4], ether->octet[5]);  
-            break;            
-        case ETHER_TYPE_TWO_DASH:
-            sprintf(buffer[buffer_index], "%02x%02x-%02x%02x-%02x%02x", 
-                ether->octet[0], ether->octet[1], ether->octet[2],
-                ether->octet[3], ether->octet[4], ether->octet[5]);  
-            break;            
-        case ETHER_TYPE_FIVE_COLON:
-            sprintf(buffer[buffer_index], "%02x:%02x:%02x:%02x:%02x:%02x", 
-                ether->octet[0], ether->octet[1], ether->octet[2],
-                ether->octet[3], ether->octet[4], ether->octet[5]);  
-            break;            
-        case ETHER_TYPE_FIVE_DASH:
-            sprintf(buffer[buffer_index], "%02x%02x%02x%02x%02x%02x", 
-                ether->octet[0], ether->octet[1], ether->octet[2],
-                ether->octet[3], ether->octet[4], ether->octet[5]);  
-            break;
-        default:
-            sprintf(buffer[buffer_index], "%02x%02x%02x%02x%02x%02x", 
-                ether->octet[0], ether->octet[1], ether->octet[2],
-                ether->octet[3], ether->octet[4], ether->octet[5]);  
-            break;            
-    }
-    
-    return buffer[buffer_index];
-}
-
-int getNetifHwAddr(const char *ifname, etherAddr_t *hwaddr)
-{
-	int sock, ret;
-	struct ifreq ifr;
-
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	if(sock < 0) 
-    {   
-        return -1;
-    }
-
-	memset(&ifr, 0, sizeof(struct ifreq));
-	strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name) - 1);
-    
-	ret = ioctl(sock, SIOCGIFHWADDR, &ifr);
-
-	if(!ret && hwaddr)
-    {
-        memcpy(hwaddr, ifr.ifr_hwaddr.sa_data, sizeof(etherAddr_t));
-    }
-
-	close(sock);
-    
-	return (ret < 0) ? -1 : 0;
-}
-
-int _slave getSlaveVersionInfo(char *pSoftVersion, char *pWanHWAddr)
-{
- 	struct sockaddr hwaddr;
-	etherAddr_t addr;
-	unsigned char *pMacAddr;
-	if (!(getNetifHwAddr(KLINK_IF, &addr)) ) 
-	{
-	 sprintf(pWanHWAddr, "%s",etherAddrToString(&addr, ETHER_TYPE_NO_SEPARTOR));
-	}
-	else
-	{
-		sprintf(pWanHWAddr,"%s","00:00:00:00:00:00");
-	}
-	strcpy(pSoftVersion,fwVersion);
 }
 
 
@@ -589,12 +563,11 @@ int syncUncrypWifiSettings(int fd, cJSON *messageBody)
 }
 
 
-cJSON * generateMessageHeader(cJSON *root,int messageType)
+cJSON * slaveGenerateMessageHeader(cJSON *root,int messageType,cJSON *messageBody)
 {   
 	cJSON *pJson=root;
 	char macAddr[18]={0};
 	char fwVersion[18]={0};	
-    getSlaveVersionInfo(fwVersion, macAddr);
 
     switch (messageType)
     {
@@ -621,11 +594,14 @@ cJSON * generateMessageHeader(cJSON *root,int messageType)
 		   messageType=KLINK_HEARD_BEAD_SYNC_MESSAGE; 
 		   break;
     }
-		cJSON_AddStringToObject(pJson, "slaveMac", macAddr);
+		cJSON_AddStringToObject(pJson, "sourceMac", slaveMac);
+	    cJSON_AddStringToObject(pJson, "destMac", cJSON_GetObjectItem(messageBody,"sourceMac")->valuestring);
+	   
+	  //  cJSON_AddStringToObject(pJson, "slaveMac", macAddr);
 	    return pJson;
 }
 
-const char* generateJsonMessageBody(int messageType,char** pMessage)
+const char* slaveGenerateJsonMessageBody(int messageType,cJSON *messageBody,char** pMessage)
 {
 	char* stringMessage=NULL;
     cJSON *topRoot=NULL;
@@ -639,7 +615,7 @@ const char* generateJsonMessageBody(int messageType,char** pMessage)
     }
 	 
     /* generate header */
-    topRoot=generateMessageHeader(topRoot,messageType);
+    topRoot=slaveGenerateMessageHeader(topRoot,messageType,messageBody);
  switch(messageType)
  {
     case KLINK_START:                     	//messageType=0
@@ -672,8 +648,8 @@ const char* generateJsonMessageBody(int messageType,char** pMessage)
 }
 
 /*
- * version formate:
-* {"messageType": "1","slaveVersion":{"slaveSoftVer":"WM V1.0.5","slaveMac":"001122334455"}}
+ * report device info formate:
+* {"messageType": "1","slaveMac":"001122334455","slaveVersion":{"slaveSoftVer":"WM V1.0.5"}}
 */
 
 void _slave slaveReportDeviceInfoToMaster(int sd, int messageType, cJSON *messageBody) 
@@ -700,7 +676,7 @@ void _slave slaveReportDeviceInfoToMaster(int sd, int messageType, cJSON *messag
      }
     }
 	
-    stringMessage=generateJsonMessageBody(messageType,&stringMessage);
+    stringMessage=slaveGenerateJsonMessageBody(messageType,messageBody,&stringMessage);
 	printf("%s_%d:send message=%s \n",__FUNCTION__,__LINE__,stringMessage);
 	send(sd, stringMessage,strlen(stringMessage), 0) ;
 }
@@ -813,6 +789,7 @@ int main(int argc,char **argv)
 	apmib_init();
 	
 	g_lastSlaveCheckTime = upSecond();
+	getMacAddr(slaveMac);
     while (1)
 	{  
 
