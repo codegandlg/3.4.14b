@@ -343,38 +343,6 @@ int _slave parseMasterConf(int fd, cJSON *jason_obj)
 
 
 /*
- *heard beat formate:
- *{"message":"10","heardBead":{"heardBeadState":"sync"}}
- *
-*/
-int sendHeardBeatMessage(int fd)
-{
-  char* stringMessage=NULL;
-  cJSON *topRoot=NULL;
-  cJSON *root=NULL;
-  cJSON *parameters=NULL;
-  printf("%s_%d:\n ",__FUNCTION__,__LINE__);
- while(1) 
- {
- if(upSecond() - g_lastSlaveCheckTime > HEART_BEAT_TIME_SCHEDULE)	
-  {
-  topRoot = cJSON_CreateObject();
-  cJSON_AddStringToObject(topRoot, "messageType", "3");//3==KLINK_SLAVE_SEND_VERSION_INFO
-  cJSON_AddItemToObject(topRoot, "heardBead", root = cJSON_CreateObject());
-  cJSON_AddStringToObject(root, "heardBeadState", "sync");
-  stringMessage = cJSON_Print(topRoot);  
-  printf("%s_%d:sen message=%s \n",__FUNCTION__,__LINE__,stringMessage);
-  send(fd, stringMessage,strlen(stringMessage), 0) ;
-  cJSON_Delete(topRoot);
-  g_lastSlaveCheckTime = upSecond();
-  break;
-  }
- }
-}
-
-
-
-/*
  *led switch formate:
  *{"message":"3","ledSwitch":{"ledEnable":"0"}}
  *
@@ -574,7 +542,7 @@ cJSON * slaveGenerateMessageHeader(cJSON *root,int messageType,cJSON *messageBod
 		  case KLINK_START: 					 
 		   cJSON_AddStringToObject(pJson, "messageType", "1");
 		   break;
-		case KLINK_MASTER_SEND_VERSION_ACK:  //messageType=2
+		case KLINK_MASTER_REPORT_DEVICE_ACK:  //messageType=2
 		   printf("=>get_master_version_ack\n");
 		   break;
 		case KLINK_HEARD_BEAD_SYNC_MESSAGE:
@@ -601,6 +569,8 @@ cJSON * slaveGenerateMessageHeader(cJSON *root,int messageType,cJSON *messageBod
 	    return pJson;
 }
 
+
+
 const char* slaveGenerateJsonMessageBody(int messageType,cJSON *messageBody,char** pMessage)
 {
 	char* stringMessage=NULL;
@@ -619,13 +589,79 @@ const char* slaveGenerateJsonMessageBody(int messageType,cJSON *messageBody,char
  switch(messageType)
  {
     case KLINK_START:                     	//messageType=0
-     cJSON_AddItemToObject(topRoot, "slaveVersion", root = cJSON_CreateObject());
-	 cJSON_AddStringToObject(root, "slaveSoftVer", fwVersion);
+     {
+       int ledEnable;
+       char buff[2]={0};
+      	/*for guest network*/
+       int disableFlg_2g;
+       int disableFlg_5g;
+       int old_wlan_idx;
+       int old_vwlan_idx;
+	   ENCRYPT_T encrypt_5g;
+	   ENCRYPT_T encrypt_2g;
+	   char ssidBuf_5g[64]={0};   
+	   char ssidBuf_2g[64]={0};
+
+       cJSON_AddItemToObject(topRoot, "slaveVersion", root = cJSON_CreateObject());
+	   cJSON_AddStringToObject(root, "slaveSoftVer", fwVersion);
+
+	    /*for led switch*/
+	   apmib_get(MIB_LED_ENABLE, (void *)&ledEnable);
+	   sprintf(buff,"%d",ledEnable);
+	   cJSON_AddItemToObject(topRoot, "ledSwitch", root = cJSON_CreateObject());
+	   cJSON_AddStringToObject(root, "ledEnable", buff);
+
+       old_wlan_idx = wlan_idx;
+	   old_vwlan_idx = vwlan_idx;
+	   
+	   /*for uncrypt wifi cfg*/
+	   vwlan_idx = 0;
+       wlan_idx = 0;
+	   apmib_get( MIB_WLAN_ENCRYPT,  (void *)&encrypt_5g);
+       apmib_get( MIB_WLAN_SSID,  (void *)&ssidBuf_5g);
+	   wlan_idx = 1;
+	   apmib_get( MIB_WLAN_ENCRYPT,  (void *)&encrypt_2g);
+       apmib_get( MIB_WLAN_SSID,  (void *)&ssidBuf_2g);
+
+	   /*for guest wifi cfg*/
+	   vwlan_idx = 2;
+       wlan_idx = 0;
+	   apmib_get(MIB_WLAN_WLAN_DISABLED, (void *)&disableFlg_5g);
+	   wlan_idx = 1;
+	   apmib_get(MIB_WLAN_WLAN_DISABLED, (void *)&disableFlg_2g);	
+	   
+	   wlan_idx = old_wlan_idx;
+       vwlan_idx = old_vwlan_idx;	   
+
+	   /*for uncrypt wifi Cfg*/
+	   cJSON_AddItemToObject(topRoot, "uncrypWifi", root = cJSON_CreateObject());
+	   memset(buff,0,sizeof(buff));
+	   sprintf(buff,"%d",encrypt_5g);
+	   cJSON_AddStringToObject(root, "encrypt_5g", buff);
+	   cJSON_AddStringToObject(root, "uncryptSsid_5g", ssidBuf_5g);
+	   memset(buff,0,sizeof(buff));
+	   sprintf(buff,"%d",encrypt_2g);
+	   cJSON_AddStringToObject(root, "encrypt_2g", buff);
+	   cJSON_AddStringToObject(root, "uncryptSsid_2g", ssidBuf_2g);
+
+	    /*for guest wifi Cfg*/
+	   cJSON_AddItemToObject(topRoot,"guestWifi", root = cJSON_CreateObject());
+	   memset(buff,0,sizeof(buff));
+	   sprintf(buff,"%d",disableFlg_5g);
+	   cJSON_AddStringToObject(root, "guestSwitch_5g", disableFlg_5g);
+	   memset(buff,0,sizeof(buff));
+	   sprintf(buff,"%d",disableFlg_2g);
+	   cJSON_AddStringToObject(root, "guestSwitch_2g", disableFlg_2g); 
+     }
+
+	 
 	 break;
-  case KLINK_MASTER_SEND_VERSION_ACK:  //messageType=2
+  case KLINK_MASTER_REPORT_DEVICE_ACK:  //messageType=2
      printf("=>get_master_version_ack\n");
 	 break;
   case KLINK_HEARD_BEAD_SYNC_MESSAGE:
+  	cJSON_AddItemToObject(topRoot, "heartbeat", root = cJSON_CreateObject());
+	cJSON_AddStringToObject(root, "heartbeatSync", "sync");
    //  sendHeardBeatMessage(sd);  
 	 break;
    case KLINK_MASTER_SEND_LED_SWITCH_TO_SLAVE:
@@ -645,6 +681,31 @@ const char* slaveGenerateJsonMessageBody(int messageType,cJSON *messageBody,char
  	*pMessage = cJSON_Print(topRoot);  
 	cJSON_Delete(topRoot);	
 	return *pMessage;
+}
+
+/*
+ *heard beat formate:
+ *{"message":"10","heardBead":{"heardBeadState":"sync"}}
+ *
+*/
+int sendHeardBeatMessage(int fd,int messageType, cJSON *messageBody)
+{
+  char* stringMessage=NULL;
+  cJSON *topRoot=NULL;
+  cJSON *root=NULL;
+  cJSON *parameters=NULL;
+  printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+ while(1) 
+ {
+ if(upSecond() - g_lastSlaveCheckTime > HEART_BEAT_TIME_SCHEDULE)	
+  {
+   stringMessage=slaveGenerateJsonMessageBody(messageType,messageBody,&stringMessage);
+   printf("%s_%d:send message=%s \n",__FUNCTION__,__LINE__,stringMessage);
+   send(fd, stringMessage,strlen(stringMessage), 0) ;
+   g_lastSlaveCheckTime = upSecond();
+  break;
+  }
+ }
 }
 
 /*
@@ -690,11 +751,11 @@ int _slave klinkSlaveStateMaching(int sd,int messageType,cJSON *messageBody)
   case KLINK_START:                     	          //messageType=0
      slaveReportDeviceInfoToMaster(sd,messageType,messageBody);   //messageType=1
 	 break;
-  case KLINK_MASTER_SEND_VERSION_ACK:                 //messageType=2
+  case KLINK_MASTER_REPORT_DEVICE_ACK:                 //messageType=2
      printf("=>get_master_version_ack\n");
 	 break;
   case KLINK_HEARD_BEAD_SYNC_MESSAGE:
-     sendHeardBeatMessage(sd);  
+     sendHeardBeatMessage(sd,messageType,messageBody);  
 	 break;
    case KLINK_MASTER_SEND_LED_SWITCH_TO_SLAVE:
      syncMasterLedSwitch(sd,messageBody); 
@@ -711,14 +772,14 @@ int _slave klinkSlaveStateMaching(int sd,int messageType,cJSON *messageBody)
   	 break;
  }
 
-  if(messageType==KLINK_MASTER_SEND_VERSION_ACK)
+  if(messageType==KLINK_MASTER_REPORT_DEVICE_ACK)
    {
      printf("%s_%d: slave prepare send heartBeat sync...\n",__FUNCTION__,__LINE__);
-     sendHeardBeatMessage(sd);   
+     sendHeardBeatMessage(sd,messageType,messageBody);   
    }
 }
 
-void _slave parseMessageFromMaster(int sd, char* masterMessage) 
+int _slave parseMessageFromMaster(int sd, char* masterMessage) 
 {
 
     cJSON *json=NULL;
@@ -734,11 +795,18 @@ void _slave parseMessageFromMaster(int sd, char* masterMessage)
     {
       /*{"slaveVersion":["messageType":"0"{"slaveSoftVer":"WM V1.0.5","slaveMac":"00:11:22:33:44:55"}]}*/
      //if(jason_obj = cJSON_GetObjectItem(json,"slaveVersion"))	
-     messageType = atoi(cJSON_GetObjectItem(json,"messageType")->valuestring);	
+     messageType = atoi(cJSON_GetObjectItem(json,"messageType")->valuestring);
+	 if(messageType>=1)
+	  {
+	    /*if dest mac not equal,it means message not send to mine,exit*/
+	    if(strcmp(cJSON_GetObjectItem(json,"destMac")->valuestring,slaveMac))
+		return 0;
+	  }
 	 printf("%s_%d:messageType=%d\n ",__FUNCTION__,__LINE__,messageType);
 	 klinkSlaveStateMaching(sd,messageType,json);
      
     }
+	return 0;
 }
 
 int main(int argc,char **argv)

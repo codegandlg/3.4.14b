@@ -354,6 +354,7 @@ KlinkNode_t* setMeshLinklistDataToMib(KlinkNode_t*head)
 
 }
 
+
 /*
  * led is on :MIB_LED_ENABLE=1   
  * led is off:MIB_LED_ENABLE=0
@@ -362,7 +363,157 @@ KlinkNode_t* setMeshLinklistDataToMib(KlinkNode_t*head)
  *{"message":"3","ledSwitch":{"ledEnable":"0"}}
  *
 */
-char* periodCheckSyncValueToSlave(int fd)
+char* periodCheckSyncValueToSlave_1(int fd,int messageType,cJSON *messageBody)
+{
+   char *pSendMsg=NULL;
+   cJSON *root=NULL;
+   cJSON *parameters=NULL;
+   int ledEnable;
+   char buff[2]={0};
+   int disableFlg_2g;
+   int disableFlg_5g;
+   int old_wlan_idx;
+   int old_vwlan_idx;
+   
+    KlinkNode_t *pKlinkNodeTmp= NULL;
+    KlinkNode_t *pKlinkNode= NULL;
+	strcpy(pKlinkNodeTmp->slaveVersionInfo.slaveMac,cJSON_GetObjectItem(messageBody,"sourceMac")->valuestring);
+    pKlinkNode=serchKlinkListNode(g_pKlinkHead,pKlinkNodeTmp);
+
+     /*led switch*/
+     apmib_get(MIB_LED_ENABLE, (void *)&ledEnable);	 	 
+     if(pKlinkNode->syncCfg.ledSwitch != ledEnable)
+     pKlinkNode->syncCfg.ledSyncFlag=SYNC_FLAG_1;
+
+     /*sync uncript wlan settings*/
+	 ENCRYPT_T encrypt_5g;
+	 char ssidBuf_5g[64]={0};
+	 ENCRYPT_T encrypt_2g;
+	 char ssidBuf_2g[64]={0}; 
+	 old_wlan_idx = wlan_idx;
+	 old_vwlan_idx = vwlan_idx;
+	 vwlan_idx = 0;
+     wlan_idx = 0;
+     apmib_get( MIB_WLAN_ENCRYPT,  (void *)&encrypt_5g);
+     apmib_get( MIB_WLAN_SSID,  (void *)&ssidBuf_5g);
+	 wlan_idx = 1;
+	 apmib_get( MIB_WLAN_ENCRYPT,  (void *)&encrypt_2g);
+     apmib_get( MIB_WLAN_SSID,  (void *)&ssidBuf_2g);
+	 if((encrypt_5g== ENCRYPT_DISABLED ) && ((pKlinkNode->syncCfg.uncriptWifi.encryptMode_5g!=ENCRYPT_DISABLED)||
+	   (strcmp(pKlinkNode->syncCfg.uncriptWifi.uncryptSsid_5g,ssidBuf_5g))))
+	   {
+	 	 pKlinkNode->syncCfg.uncriptWifi.uncryptWifiSyncFlag=SYNC_FLAG_1;
+	   }
+	 if((encrypt_2g== ENCRYPT_DISABLED ) && ((pKlinkNode->syncCfg.uncriptWifi.encryptMode_2g!=ENCRYPT_DISABLED)||
+	   (strcmp(pKlinkNode->syncCfg.uncriptWifi.uncryptSsid_2g,ssidBuf_2g))))
+	   {
+	 	 pKlinkNode->syncCfg.uncriptWifi.uncryptWifiSyncFlag=SYNC_FLAG_1;
+	   }
+	   wlan_idx=old_wlan_idx;
+	   vwlan_idx=old_vwlan_idx;
+
+	 /*guest*/
+	 old_wlan_idx = wlan_idx;
+	 old_vwlan_idx = vwlan_idx;
+	 vwlan_idx = 2;
+     wlan_idx = 0;
+	 apmib_get(MIB_WLAN_WLAN_DISABLED, (void *)&disableFlg_5g);
+	 wlan_idx = 1;
+	 apmib_get(MIB_WLAN_WLAN_DISABLED, (void *)&disableFlg_2g);	
+	 if((pKlinkNode->syncCfg.guestWifi.guestWifiSwitch_5g!=disableFlg_5g)||
+	 (pKlinkNode->syncCfg.guestWifi.guestWifiSwitch_2g!=disableFlg_2g))
+	 {
+	  printf("===>>>%s_%d: \n",__FUNCTION__,__LINE__);	 
+	  pKlinkNode->syncCfg.guestWifi.guestSyncFlag=SYNC_FLAG_1;
+	 } 
+	 wlan_idx = old_wlan_idx;
+     vwlan_idx = old_vwlan_idx;	
+
+	 /*led control*/
+	 if(pKlinkNode->syncCfg.ledSyncFlag==SYNC_FLAG_1)
+	 {
+	   sprintf(buff,"%d",ledEnable);
+	   root = cJSON_CreateObject();
+	   cJSON_AddStringToObject(root, "messageType", "4"); //KLINK_MASTER_SEND_LED_SWITCH_TO_SLAVE
+	   cJSON_AddItemToObject(root, "ledSwitch", parameters = cJSON_CreateObject());
+	   	 	  printf("%s_%d: \n",__FUNCTION__,__LINE__);
+	   cJSON_AddStringToObject(parameters, "ledEnable", buff);
+	   pSendMsg = cJSON_Print(root);  
+	    printf("%s_%d:send_led_config_to_slave:\n %s \n ",__FUNCTION__,__LINE__,pSendMsg);
+	   send(fd, pSendMsg,strlen(pSendMsg), 0) ;	
+	   cJSON_Delete(root);	 	 
+	 } 
+
+	 /*when wlan enctrypt is disabled,sync wlan settings*/
+	 else if ((pKlinkNode->syncCfg.uncriptWifi.uncryptWifiSyncFlag==SYNC_FLAG_1)&&((encrypt_5g==ENCRYPT_DISABLED)||(encrypt_2g==ENCRYPT_DISABLED))) 
+	 {	
+	   root = cJSON_CreateObject();
+	   cJSON_AddStringToObject(root, "messageType", "6"); //KLINK_MASTER_SEND_UNENCRYP_WIFI_INFO_TO_SLAVE
+	   cJSON_AddItemToObject(root, "uncrypWifi", parameters = cJSON_CreateObject());
+	   memset(buff,0,sizeof(buff));
+	   sprintf(buff,"%d",encrypt_5g);
+	   cJSON_AddStringToObject(parameters, "encrypt_5g", buff);
+	   cJSON_AddStringToObject(parameters, "ssid_5g", ssidBuf_5g);
+	   memset(buff,0,sizeof(buff));
+	   sprintf(buff,"%d",encrypt_2g);
+	   cJSON_AddStringToObject(parameters, "encrypt_2g", buff);
+	   cJSON_AddStringToObject(parameters, "ssid_2g", ssidBuf_2g);
+	   pSendMsg = cJSON_Print(root);  
+	    printf("%s_%d:send_uncrypt_wifi_config_to_slave:\n %s \n ",__FUNCTION__,__LINE__,pSendMsg);
+	   send(fd, pSendMsg,strlen(pSendMsg), 0) ;	
+	   cJSON_Delete(root);	
+	 } 
+	 /*guest wifi settins*/
+	 else if(pKlinkNode->syncCfg.guestWifi.guestSyncFlag==SYNC_FLAG_1)
+	 {
+	   old_wlan_idx = wlan_idx;
+	   old_vwlan_idx = vwlan_idx;
+	   vwlan_idx = 2;
+       wlan_idx = 0;
+       if (apmib_get(MIB_WLAN_WLAN_DISABLED, (void *)&disableFlg_5g) == 0)
+       {
+          printf("get guest wlan5g disable err\n");
+       }
+       wlan_idx = 1;
+       if (apmib_get(MIB_WLAN_WLAN_DISABLED, (void *)&disableFlg_2g) == 0)
+       {
+          printf("get guest wlan2g disable err\n");
+       }
+	   root = cJSON_CreateObject();
+	   cJSON_AddStringToObject(root, "messageType", "8"); //KLINK_MASTER_SEND_GUEST_WIFI_INFO_TO_SLAVE
+	   cJSON_AddItemToObject(root, "guestWifi", parameters = cJSON_CreateObject());
+	   printf("%s_%d: \n",__FUNCTION__,__LINE__);
+	   memset(buff,0,sizeof(buff));
+	   sprintf(buff,"%d",disableFlg_5g);
+	   cJSON_AddStringToObject(parameters, "guestSwitch_5g", buff);
+	   memset(buff,0,sizeof(buff));
+	   sprintf(buff,"%d",disableFlg_2g);
+	   cJSON_AddStringToObject(parameters, "guestSwitch_2g", buff);
+	   pSendMsg = cJSON_Print(root);  
+	   printf("%s_%d:send_guest_wifi_config_to_slave:\n %s \n ",__FUNCTION__,__LINE__,pSendMsg);
+	   send(fd, pSendMsg,strlen(pSendMsg), 0) ;	
+	   cJSON_Delete(root);	
+	   
+       wlan_idx = old_wlan_idx;
+       vwlan_idx = old_vwlan_idx;
+	 }
+    else
+    {   
+       sendHeartBeatMessage(fd,messageType,messageBody);       
+    }
+	
+   printf("%s_%d: \n",__FUNCTION__,__LINE__);
+}
+#if 0
+/*
+ * led is on :MIB_LED_ENABLE=1   
+ * led is off:MIB_LED_ENABLE=0
+ *
+ *led switch data formate:
+ *{"message":"3","ledSwitch":{"ledEnable":"0"}}
+ *
+*/
+char* periodCheckSyncValueToSlave(int fd,int messageType,cJSON *messageBody)
 {
    char *pSendMsg=NULL;
    cJSON *root=NULL;
@@ -420,10 +571,10 @@ char* periodCheckSyncValueToSlave(int fd)
 	 wlan_idx = 1;
 	 apmib_get(MIB_WLAN_WLAN_DISABLED, (void *)&disableFlg_2g);	
 	printf("===>>>%s_%d: backup5g=%d current5g=%d \n",__FUNCTION__,__LINE__,
-	pBackupSyncCfg->guestWifi.guestWifiwitch_5g,disableFlg_5g);
+	pBackupSyncCfg->guestWifi.guestWifiSwitch_5g,disableFlg_5g);
 	printf("===>>>%s_%d: backup2g=%d current2g=%d \n",__FUNCTION__,__LINE__,
 		  	pBackupSyncCfg->guestWifi.guestWifiSwitch_2g,disableFlg_2g);
-	 if((pBackupSyncCfg->guestWifi.guestWifiwitch_5g!=disableFlg_5g)||
+	 if((pBackupSyncCfg->guestWifi.guestWifiSwitch_5g!=disableFlg_5g)||
 	 (pBackupSyncCfg->guestWifi.guestWifiSwitch_2g!=disableFlg_2g))
 	 {
 	  printf("===>>>%s_%d: \n",__FUNCTION__,__LINE__);	 
@@ -511,6 +662,7 @@ char* periodCheckSyncValueToSlave(int fd)
 	
    printf("%s_%d: \n",__FUNCTION__,__LINE__);
 }
+#endif
 
 int parseSlaveVersionConf(int fd, cJSON *messageBody)
 {
@@ -620,11 +772,11 @@ int backupCurrentCfg(int messageType)
 	 vwlan_idx = 2;
      wlan_idx = 0;
 	 apmib_get(MIB_WLAN_WLAN_DISABLED, (void *)&disableFlg_5g);
-	 pCfg->guestWifi.guestWifiwitch_5g=disableFlg_5g;
+	 pCfg->guestWifi.guestWifiSwitch_5g=disableFlg_5g;
 	 wlan_idx = 1;
 	 apmib_get(MIB_WLAN_WLAN_DISABLED, (void *)&disableFlg_2g);
 	  pCfg->guestWifi.guestWifiSwitch_2g=disableFlg_2g;
-	 printf("%s_%d: 2g=%d 5g=%d \n",__FUNCTION__,__LINE__,pCfg->guestWifi.guestWifiSwitch_2g,pCfg->guestWifi.guestWifiwitch_5g=disableFlg_5g);
+	 printf("%s_%d: 2g=%d 5g=%d \n",__FUNCTION__,__LINE__,pCfg->guestWifi.guestWifiSwitch_2g,pCfg->guestWifi.guestWifiSwitch_5g=disableFlg_5g);
 
 	 wlan_idx = old_wlan_idx;
      vwlan_idx = old_vwlan_idx;	
@@ -645,11 +797,27 @@ void cjsonToMessageNode(cJSON *messageBody,KlinkNode_t *messageNode)
  {
   case KLINK_SLAVE_REPORT_DEVICE_INFO:
   	{
-  	strcpy(messageNode->slaveDevideInfo.slaveMacAddr,cJSON_GetObjectItem(messageBody,"sourceMac")->valuestring);
-	if(jasonObj = cJSON_GetObjectItem(messageBody,"slaveVersion"))
-	 {
-      strcpy(messageNode->slaveDevideInfo.slaveFwVersion,cJSON_GetObjectItem(jasonObj,"slaveSoftVer")->valuestring);
-     }  
+  	   strcpy(messageNode->slaveDevideInfo.slaveMacAddr,cJSON_GetObjectItem(messageBody,"sourceMac")->valuestring);
+	   if(jasonObj = cJSON_GetObjectItem(messageBody,"slaveVersion"))
+	   {
+         strcpy(messageNode->slaveDevideInfo.slaveFwVersion,cJSON_GetObjectItem(jasonObj,"slaveSoftVer")->valuestring);
+       } 
+	   if(jasonObj = cJSON_GetObjectItem(messageBody,"ledSwitch"))
+	   {
+         messageNode->syncCfg.ledSwitch=atoi(cJSON_GetObjectItem(jasonObj,"ledEnable")->valuestring);
+       }  
+	   if(jasonObj = cJSON_GetObjectItem(messageBody,"uncrypWifi"))
+	   {
+	     messageNode->syncCfg.uncriptWifi.encryptMode_5g=atoi(cJSON_GetObjectItem(jasonObj,"encrypt_5g")->valuestring);
+		 strcpy(messageNode->syncCfg.uncriptWifi.uncryptSsid_5g,cJSON_GetObjectItem(jasonObj,"uncryptSsid_5g")->valuestring);
+		 messageNode->syncCfg.uncriptWifi.encryptMode_2g=atoi(cJSON_GetObjectItem(jasonObj,"encrypt_2g")->valuestring);
+		 strcpy(messageNode->syncCfg.uncriptWifi.uncryptSsid_2g,cJSON_GetObjectItem(jasonObj,"uncryptSsid_2g")->valuestring);
+	   }  
+	   if(jasonObj = cJSON_GetObjectItem(messageBody,"guestWifi"))
+	   {
+         messageNode->syncCfg.guestWifi.guestWifiSwitch_5g=atoi(cJSON_GetObjectItem(jasonObj,"guestSwitch_5g")->valuestring);
+		 messageNode->syncCfg.guestWifi.guestWifiSwitch_2g=atoi(cJSON_GetObjectItem(jasonObj,"guestSwitch_2g")->valuestring);
+       }  
   	}
 	 break;
   case KLINK_HEARD_BEAD_SYNC_MESSAGE:
@@ -677,7 +845,7 @@ void cjsonToMessageNode(cJSON *messageBody,KlinkNode_t *messageNode)
 
 
 
-cJSON * masterGenerateMessageHeader(cJSON *root,int messageType)
+cJSON * masterGenerateMessageHeader(cJSON *root,int messageType,cJSON *messageBody)
 {   
 	cJSON *pJson=root;
 	char macAddr[18]={0};
@@ -686,7 +854,7 @@ cJSON * masterGenerateMessageHeader(cJSON *root,int messageType)
     switch (messageType)
     {
         case KLINK_START:
-			cJSON_AddStringToObject(pJson, "messageType", "1");
+			cJSON_AddStringToObject(pJson, "messageType", "0");
 			break;	
 		case KLINK_SLAVE_REPORT_DEVICE_INFO: 					 
 		   cJSON_AddStringToObject(pJson, "messageType", "2");
@@ -714,10 +882,12 @@ cJSON * masterGenerateMessageHeader(cJSON *root,int messageType)
 		   break;
     }
 		cJSON_AddStringToObject(pJson, "sourceMac", masterMac);	
+	    if(messageType!=KLINK_START)
+	    cJSON_AddStringToObject(pJson, "destMac", cJSON_GetObjectItem(messageBody,"sourceMac")->valuestring);	
 	    return pJson;
 }
 
-const char* masterGenerateJsonMessageBody(int messageType,char** pMessage)
+const char* masterGenerateJsonMessageBody(int messageType,cJSON *messageBody,char** pMessage)
 {
 	char* stringMessage=NULL;
     cJSON *topRoot=NULL;
@@ -731,7 +901,7 @@ const char* masterGenerateJsonMessageBody(int messageType,char** pMessage)
     }
 	 
     /* generate header */
-    topRoot=masterGenerateMessageHeader(topRoot,messageType);
+    topRoot=masterGenerateMessageHeader(topRoot,messageType,messageBody);
  switch(messageType)
  {
   case KLINK_SLAVE_REPORT_DEVICE_INFO:                     	//messageType=0
@@ -740,6 +910,8 @@ const char* masterGenerateJsonMessageBody(int messageType,char** pMessage)
 	 break;
   case KLINK_HEARD_BEAD_SYNC_MESSAGE:
      printf("=>get slave heard bead \n");
+	cJSON_AddItemToObject(topRoot, "heartbeat", root = cJSON_CreateObject());
+	cJSON_AddStringToObject(root, "heartbeatSync", "sync");
 	 break;
   case KLINK_SALAVE_SEND_LED_SWITCH_ACK:
   	backupCurrentCfg(messageType);
@@ -765,6 +937,23 @@ const char* masterGenerateJsonMessageBody(int messageType,char** pMessage)
 	return *pMessage;
 }
 
+/*
+ *heard beat formate:
+ *{"message":"10","heardBead":{"heardBeadState":"sync"}}
+ *
+*/
+int sendHeartBeatMessage(int fd,int messageType, cJSON *messageBody)
+{
+  char* stringMessage=NULL;
+  cJSON *topRoot=NULL;
+  cJSON *root=NULL;
+  cJSON *parameters=NULL;
+
+   stringMessage=masterGenerateJsonMessageBody(messageType,messageBody,&stringMessage);
+   printf("%s_%d:send message=%s \n",__FUNCTION__,__LINE__,stringMessage);
+   send(fd, stringMessage,strlen(stringMessage), 0) ;
+}
+
 int addSlaveDeviceInfoToLinkList(int fd, cJSON *messageBody,KlinkNode_t *messageNode)
 {
    cJSON *jasonObj=NULL;
@@ -777,6 +966,7 @@ int addSlaveDeviceInfoToLinkList(int fd, cJSON *messageBody,KlinkNode_t *message
    KlinkNode_t *messageDevice=messageNode;
    char *pResponseMsg=NULL;
    cJSON *responseJSON=NULL;
+   int messageType=0;
    printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 
    cjsonToMessageNode(messageBody,messageNode);
@@ -793,13 +983,11 @@ int addSlaveDeviceInfoToLinkList(int fd, cJSON *messageBody,KlinkNode_t *message
    showKlinkNode(pKlinkHead);
    setMeshLinklistDataToMib(pKlinkHead);
  #endif
-    /*rend ack message to slave*/
-	responseJSON = cJSON_CreateObject();
-	cJSON_AddStringToObject(responseJSON, "messageType", "2"); //2==KLINK_MASTER_SEND_ACK_VERSION_INFO
-	pResponseMsg = cJSON_Print(responseJSON); 
+    messageType = atoi(cJSON_GetObjectItem(messageBody,"messageType")->valuestring);
+    pResponseMsg=masterGenerateJsonMessageBody(messageType,messageBody,&pResponseMsg);
 	printf("%s_%d:send version ack data [%s]  \n",__FUNCTION__,__LINE__,pResponseMsg);
 	send(fd , pResponseMsg, strlen(pResponseMsg) , 0 );
-	cJSON_Delete(responseJSON);	
+
 }
 
 int klinkMasterStateMaching(int sd,int messageType,cJSON *messageBody)
@@ -813,6 +1001,7 @@ int klinkMasterStateMaching(int sd,int messageType,cJSON *messageBody)
 	 break;
   case KLINK_HEARD_BEAD_SYNC_MESSAGE:
      printf("=>get slave heard bead \n");
+	// sendHeartBeatMessage(sd,messageType,messageBody);  
 	 break;
   case KLINK_SALAVE_SEND_LED_SWITCH_ACK:
   	backupCurrentCfg(messageType);
@@ -834,10 +1023,11 @@ int klinkMasterStateMaching(int sd,int messageType,cJSON *messageBody)
   	 break;
  }
  
- if((messageType==KLINK_SALAVE_SEND_LED_SWITCH_ACK)||(messageType==KLINK_HEARD_BEAD_SYNC_MESSAGE)||
- 	(messageType==KLINK_SLAVE_SEND_UNCRYPT_WIFI_SETTING_ACK)||(messageType==KLINK_SLAVE_SEND_GUEST_WIFI_SETTING_ACK))
+ if((messageType==KLINK_SALAVE_SEND_LED_SWITCH_ACK)||(messageType==KLINK_SLAVE_SEND_UNCRYPT_WIFI_SETTING_ACK)||
+ 	(messageType==KLINK_SLAVE_SEND_GUEST_WIFI_SETTING_ACK)||(messageType==KLINK_HEARD_BEAD_SYNC_MESSAGE))
   {
-   periodCheckSyncValueToSlave(sd);
+   //periodCheckSyncValueToSlave(sd,messageType,messageBody);
+   periodCheckSyncValueToSlave_1(sd,messageType,messageBody);
   }
  return 0;
 }
@@ -875,7 +1065,7 @@ const char* klinkStartMessageBody(int messageType,char** pMessage)
 	char* stringMessage=NULL;
     cJSON *topRoot=NULL;
 	cJSON *root=NULL;
- 		  
+ 	root = cJSON_CreateObject();	  
 	topRoot = cJSON_CreateObject();
 	 if (!topRoot)
     {
@@ -883,9 +1073,10 @@ const char* klinkStartMessageBody(int messageType,char** pMessage)
         return NULL;
     }
 	 
-    topRoot=masterGenerateMessageHeader(topRoot,messageType);
+    topRoot=masterGenerateMessageHeader(topRoot,messageType,root);
  	*pMessage = cJSON_Print(topRoot);  
 	cJSON_Delete(topRoot);	
+	cJSON_Delete(root);	
 	return *pMessage;
 }
 

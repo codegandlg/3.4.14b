@@ -46,6 +46,9 @@ Description  :
 #define ENUM_DEFAULT               0
 #define HEART_BEAT_TIME_SCHEDULE   5    /*seconds*/
 #define MESSAGE_BUFFER_SIZE        512
+#define SYNC_FLAG_1                1   //prepare sync
+#define SYNC_FLAG_0                0   //already sync 
+
 
 typedef enum  
 {
@@ -58,7 +61,7 @@ typedef enum
   KLINK_START=ENUM_DEFAULT,
   	
   KLINK_SLAVE_REPORT_DEVICE_INFO=1,   
-  KLINK_MASTER_SEND_VERSION_ACK=2,    
+  KLINK_MASTER_REPORT_DEVICE_ACK=2,    
 
   KLINK_HEARD_BEAD_SYNC_MESSAGE=3,   
   
@@ -106,7 +109,7 @@ typedef struct uncryptWifiSetting
 
 typedef struct guestWifiSeting
 {
- int guestWifiwitch_5g;
+ int guestWifiSwitch_5g;
  int guestWifiSwitch_2g;
  int guestSyncFlag;
 }guestWifiSetting_t;
@@ -114,6 +117,7 @@ typedef struct guestWifiSeting
 typedef struct meshSeting
 {
  int ledSwitch;
+ int ledSyncFlag;
  uncryptWifiSetting_t uncriptWifi;
  guestWifiSetting_t guestWifi;
 }meshSetting_t;

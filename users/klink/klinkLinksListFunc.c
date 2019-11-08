@@ -25,8 +25,6 @@ Description  :
 #include <errno.h>
 #include "klink.h"
 #include "cJSON.h"
-KlinkNode_t* g_pKlinkHead = NULL;
-KlinkNode_t klinkNodeData;
 
 
 /*init head*/
@@ -79,6 +77,137 @@ int clearKlinkList( KlinkNode_t *head)
     head->next=NULL;  
     return 1;  
 }  
+
+/*add mode*/
+KlinkNode_t *addKlinkListNode_1(KlinkNode_t*head,KlinkNode_t *pdata)
+{
+   KlinkNode_t *phead,*new_node;
+   phead=head;
+
+   if(NULL==phead)
+   {
+	return NULL;	
+   }
+   else
+   { 
+	while(phead->next!=NULL)   
+	{   
+	    /*if found same slave node already in the link list,just update node data*/
+	    if(!strcmp(phead->next->slaveDevideInfo.slaveMacAddr,pdata->slaveDevideInfo.slaveMacAddr))
+	    {
+	      printf("==>%s_%d:found same mesh device in the link node list\n",__FUNCTION__,__LINE__);
+		  switch(pdata->klinkMsgStaMachine)
+		  {
+		    case KLINK_SLAVE_REPORT_DEVICE_INFO:
+		    {
+		     /*slave device info*/
+		     strcpy(phead->next->slaveDevideInfo.slaveMacAddr,pdata->slaveDevideInfo.slaveMacAddr);
+			 strcpy(phead->next->slaveDevideInfo.slaveFwVersion,pdata->slaveDevideInfo.slaveFwVersion);
+
+             /*slave led switch cfg*/
+			 phead->next->syncCfg.ledSwitch=pdata->syncCfg.ledSwitch;
+
+             /*slave uncrypt wifi cfg*/
+			 phead->next->syncCfg.uncriptWifi.encryptMode_5g=pdata->syncCfg.uncriptWifi.encryptMode_5g;
+			 strcpy(phead->next->syncCfg.uncriptWifi.uncryptSsid_5g,pdata->syncCfg.uncriptWifi.uncryptSsid_5g);
+			 phead->next->syncCfg.uncriptWifi.encryptMode_2g=pdata->syncCfg.uncriptWifi.encryptMode_2g;
+			 strcpy(phead->next->syncCfg.uncriptWifi.uncryptSsid_2g,pdata->syncCfg.uncriptWifi.uncryptSsid_2g);
+
+			 /*guest wifi cfg*/
+			 phead->next->syncCfg.guestWifi.guestWifiSwitch_5g= pdata->syncCfg.guestWifi.guestWifiSwitch_5g;
+			 phead->next->syncCfg.guestWifi.guestWifiSwitch_2g= pdata->syncCfg.guestWifi.guestWifiSwitch_2g;
+			 break;
+		    }
+			case KLINK_HEARD_BEAD_SYNC_MESSAGE:
+			{  
+			 break;
+			}
+			case KLINK_SALAVE_SEND_LED_SWITCH_ACK:
+			{
+			 if(phead->next->syncCfg.ledSwitch!=pdata->syncCfg.ledSwitch)
+			 	 phead->next->syncCfg.ledSwitch=pdata->syncCfg.ledSwitch;			 	
+			 break;
+			}
+		    case KLINK_SLAVE_SEND_UNCRYPT_WIFI_SETTING_ACK:
+		    {
+		      if((phead->next->syncCfg.uncriptWifi.encryptMode_5g!=ENCRYPT_DISABLED)&&
+			  (phead->next->syncCfg.uncriptWifi.encryptMode_2g!=ENCRYPT_DISABLED))
+		      {
+		     	 break;
+		      }
+			  else
+			  {
+			     phead->next->syncCfg.uncriptWifi.encryptMode_5g=pdata->syncCfg.uncriptWifi.encryptMode_5g;
+				 if(strcmp(phead->next->syncCfg.uncriptWifi.uncryptSsid_5g,pdata->syncCfg.uncriptWifi.uncryptSsid_5g))
+				  {
+				    memset(phead->next->syncCfg.uncriptWifi.uncryptSsid_5g,0,sizeof(phead->next->syncCfg.uncriptWifi.uncryptSsid_5g));
+			        strcpy(phead->next->syncCfg.uncriptWifi.uncryptSsid_5g,pdata->syncCfg.uncriptWifi.uncryptSsid_5g);
+				  }
+			      phead->next->syncCfg.uncriptWifi.encryptMode_2g=pdata->syncCfg.uncriptWifi.encryptMode_2g;
+				  if(strcmp(phead->next->syncCfg.uncriptWifi.uncryptSsid_2g,pdata->syncCfg.uncriptWifi.uncryptSsid_2g))
+				  {
+				    memset(phead->next->syncCfg.uncriptWifi.uncryptSsid_2g,0,sizeof(phead->next->syncCfg.uncriptWifi.uncryptSsid_2g));
+			        strcpy(phead->next->syncCfg.uncriptWifi.uncryptSsid_2g,pdata->syncCfg.uncriptWifi.uncryptSsid_2g);
+				  }		  	
+			  }			 
+		     break;
+		    }
+		    case KLINK_SLAVE_SEND_GUEST_WIFI_SETTING_ACK:
+		    {
+		     if(phead->next->syncCfg.guestWifi.guestWifiSwitch_5g != pdata->syncCfg.guestWifi.guestWifiSwitch_5g)
+			 	phead->next->syncCfg.guestWifi.guestWifiSwitch_5g = pdata->syncCfg.guestWifi.guestWifiSwitch_5g;
+			 if(phead->next->syncCfg.guestWifi.guestWifiSwitch_2g != pdata->syncCfg.guestWifi.guestWifiSwitch_2g)
+			 	phead->next->syncCfg.guestWifi.guestWifiSwitch_2g = pdata->syncCfg.guestWifi.guestWifiSwitch_2g;
+		     break;
+		    }	   
+		  }
+		 return phead;
+	    }
+		phead=phead->next;		
+	}
+      /*else add new node to the link list tail*/
+	  if(NULL!=(new_node=(KlinkNode_t*)malloc(sizeof(KlinkNode_t))))
+	  {
+		switch(pdata->klinkMsgStaMachine)
+		{
+		  case KLINK_SLAVE_REPORT_DEVICE_INFO:
+		  {
+		     /*slave device info*/
+		     strcpy(phead->next->slaveDevideInfo.slaveMacAddr,pdata->slaveDevideInfo.slaveMacAddr);
+			 strcpy(phead->next->slaveDevideInfo.slaveFwVersion,pdata->slaveDevideInfo.slaveFwVersion);
+
+             /*slave led switch cfg*/
+			 phead->next->syncCfg.ledSwitch=pdata->syncCfg.ledSwitch;
+
+             /*slave uncrypt wifi cfg*/
+			 phead->next->syncCfg.uncriptWifi.encryptMode_5g=pdata->syncCfg.uncriptWifi.encryptMode_5g;
+			 strcpy(phead->next->syncCfg.uncriptWifi.uncryptSsid_5g,pdata->syncCfg.uncriptWifi.uncryptSsid_5g);
+			 phead->next->syncCfg.uncriptWifi.encryptMode_2g=pdata->syncCfg.uncriptWifi.encryptMode_2g;
+			 strcpy(phead->next->syncCfg.uncriptWifi.uncryptSsid_2g,pdata->syncCfg.uncriptWifi.uncryptSsid_2g);
+
+			 /*guest wifi cfg*/
+			 phead->next->syncCfg.guestWifi.guestWifiSwitch_5g= pdata->syncCfg.guestWifi.guestWifiSwitch_5g;
+			 phead->next->syncCfg.guestWifi.guestWifiSwitch_2g= pdata->syncCfg.guestWifi.guestWifiSwitch_2g;
+#if 0
+		   /*
+           set sync flag to 1 on slave report message,so that cfg can be sync
+           once slave device add to mesh network
+           */
+		    new_node->syncCfg.ledSyncFlag=SYNC_FLAG_1;
+			new_node->syncCfg.uncriptWifi.uncryptWifiSyncFlag=SYNC_FLAG_1;
+			new_node->syncCfg.guestWifi.guestSyncFlag=SYNC_FLAG_1;	
+#endif			 
+		  }
+		   break;
+		}
+
+		  phead->next=new_node;
+		  new_node->next=NULL;
+		 return phead;
+	  }	   
+   }
+}
+
 
 /*add mode*/
 KlinkNode_t *addKlinkListNode(KlinkNode_t*head,KlinkNode_t *pdata,int type)
@@ -158,7 +287,6 @@ KlinkNode_t* serchKlinkListNode(KlinkNode_t*head,KlinkNode_t *pdata)
 	{
 		printf("serch failed\n");
 		printf("#################\n");
-		return NULL;
 	}
 }
 
@@ -213,7 +341,7 @@ void showKlinkNode(KlinkNode_t*head)
 		}
 		printf("#################\n");
 	}
-	printf("show list node date is:slaveNum     [%d]\n",g_pKlinkHead->slaveMeshNum);
+	//printf("show list node date is:slaveNum     [%d]\n",g_pKlinkHead->slaveMeshNum);
 	
 }
 
