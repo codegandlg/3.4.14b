@@ -91,31 +91,36 @@ KlinkNode_t *addKlinkListNode_1(KlinkNode_t*head,KlinkNode_t *pdata)
    else
    { 
 	while(phead->next!=NULL)   
-	{   
+	{   printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 	    /*if found same slave node already in the link list,just update node data*/
 	    if(!strcmp(phead->next->slaveDevideInfo.slaveMacAddr,pdata->slaveDevideInfo.slaveMacAddr))
 	    {
+	    printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 	      printf("==>%s_%d:found same mesh device in the link node list\n",__FUNCTION__,__LINE__);
 		  switch(pdata->klinkMsgStaMachine)
 		  {
 		    case KLINK_SLAVE_REPORT_DEVICE_INFO:
 		    {
+		    printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 		     /*slave device info*/
 		     strcpy(phead->next->slaveDevideInfo.slaveMacAddr,pdata->slaveDevideInfo.slaveMacAddr);
 			 strcpy(phead->next->slaveDevideInfo.slaveFwVersion,pdata->slaveDevideInfo.slaveFwVersion);
-
+               printf("%s_%d:\n ",__FUNCTION__,__LINE__);
              /*slave led switch cfg*/
 			 phead->next->syncCfg.ledSwitch=pdata->syncCfg.ledSwitch;
+			 printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 
              /*slave uncrypt wifi cfg*/
 			 phead->next->syncCfg.uncriptWifi.encryptMode_5g=pdata->syncCfg.uncriptWifi.encryptMode_5g;
 			 strcpy(phead->next->syncCfg.uncriptWifi.uncryptSsid_5g,pdata->syncCfg.uncriptWifi.uncryptSsid_5g);
 			 phead->next->syncCfg.uncriptWifi.encryptMode_2g=pdata->syncCfg.uncriptWifi.encryptMode_2g;
 			 strcpy(phead->next->syncCfg.uncriptWifi.uncryptSsid_2g,pdata->syncCfg.uncriptWifi.uncryptSsid_2g);
+			 printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 
 			 /*guest wifi cfg*/
 			 phead->next->syncCfg.guestWifi.guestWifiSwitch_5g= pdata->syncCfg.guestWifi.guestWifiSwitch_5g;
 			 phead->next->syncCfg.guestWifi.guestWifiSwitch_2g= pdata->syncCfg.guestWifi.guestWifiSwitch_2g;
+			 printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 			 break;
 		    }
 			case KLINK_HEARD_BEAD_SYNC_MESSAGE:
@@ -172,22 +177,29 @@ KlinkNode_t *addKlinkListNode_1(KlinkNode_t*head,KlinkNode_t *pdata)
 		{
 		  case KLINK_SLAVE_REPORT_DEVICE_INFO:
 		  {
+		  printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+		   printf("%s_%d:--mac=%s\n ",__FUNCTION__,__LINE__,pdata->slaveDevideInfo.slaveMacAddr);
 		     /*slave device info*/
-		     strcpy(phead->next->slaveDevideInfo.slaveMacAddr,pdata->slaveDevideInfo.slaveMacAddr);
-			 strcpy(phead->next->slaveDevideInfo.slaveFwVersion,pdata->slaveDevideInfo.slaveFwVersion);
+		     strcpy(new_node->slaveDevideInfo.slaveMacAddr,pdata->slaveDevideInfo.slaveMacAddr);
+			 	  printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+			 strcpy(new_node->slaveDevideInfo.slaveFwVersion,pdata->slaveDevideInfo.slaveFwVersion);
+			 printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 
              /*slave led switch cfg*/
-			 phead->next->syncCfg.ledSwitch=pdata->syncCfg.ledSwitch;
+			 new_node->syncCfg.ledSwitch=pdata->syncCfg.ledSwitch;
+			 printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 
              /*slave uncrypt wifi cfg*/
-			 phead->next->syncCfg.uncriptWifi.encryptMode_5g=pdata->syncCfg.uncriptWifi.encryptMode_5g;
-			 strcpy(phead->next->syncCfg.uncriptWifi.uncryptSsid_5g,pdata->syncCfg.uncriptWifi.uncryptSsid_5g);
-			 phead->next->syncCfg.uncriptWifi.encryptMode_2g=pdata->syncCfg.uncriptWifi.encryptMode_2g;
-			 strcpy(phead->next->syncCfg.uncriptWifi.uncryptSsid_2g,pdata->syncCfg.uncriptWifi.uncryptSsid_2g);
+			 new_node->syncCfg.uncriptWifi.encryptMode_5g=pdata->syncCfg.uncriptWifi.encryptMode_5g;
+			 strcpy(new_node->syncCfg.uncriptWifi.uncryptSsid_5g,pdata->syncCfg.uncriptWifi.uncryptSsid_5g);
+			 new_node->syncCfg.uncriptWifi.encryptMode_2g=pdata->syncCfg.uncriptWifi.encryptMode_2g;
+			 strcpy(new_node->syncCfg.uncriptWifi.uncryptSsid_2g,pdata->syncCfg.uncriptWifi.uncryptSsid_2g);
+			 printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 
 			 /*guest wifi cfg*/
-			 phead->next->syncCfg.guestWifi.guestWifiSwitch_5g= pdata->syncCfg.guestWifi.guestWifiSwitch_5g;
-			 phead->next->syncCfg.guestWifi.guestWifiSwitch_2g= pdata->syncCfg.guestWifi.guestWifiSwitch_2g;
+			 new_node->syncCfg.guestWifi.guestWifiSwitch_5g= pdata->syncCfg.guestWifi.guestWifiSwitch_5g;
+			 new_node->syncCfg.guestWifi.guestWifiSwitch_2g= pdata->syncCfg.guestWifi.guestWifiSwitch_2g;
+			 printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 #if 0
 		   /*
            set sync flag to 1 on slave report message,so that cfg can be sync
@@ -262,22 +274,117 @@ KlinkNode_t *addKlinkListNode(KlinkNode_t*head,KlinkNode_t *pdata,int type)
 	  }	   
    }
 }
- 
+
+
+/*update klink mode data*/
+KlinkNode_t *updateKlinkListNodeData(KlinkNode_t*head,cJSON *messageBody)
+{
+    int messageType=-1;
+	int value =-1;
+	cJSON *jasonObj=NULL;
+  	KlinkNode_t *phead=head;
+	if(phead==NULL)
+	{
+		printf("head_node is empty\n");
+		return NULL;
+	}
+	while(strcmp(phead->slaveDevideInfo.slaveMacAddr,cJSON_GetObjectItem(messageBody,"sourceMac")->valuestring)&&phead->next!=NULL)
+	{    
+		phead=phead->next;
+	}
+	if(!(strcmp(phead->slaveDevideInfo.slaveMacAddr,cJSON_GetObjectItem(messageBody,"sourceMac")->valuestring)))
+	{
+	    /*here we found the target node,just updata node data*/
+		printf("serch succed klink node: [%s]\n",cJSON_GetObjectItem(messageBody,"sourceMac")->valuestring);
+		messageType = atoi(cJSON_GetObjectItem(messageBody,"messageType")->valuestring);
+		switch(messageType)
+		{
+		   case KLINK_HEARD_BEAD_SYNC_MESSAGE:
+ 			 break;
+  		   case KLINK_SALAVE_SEND_LED_SWITCH_ACK:
+  		   	{
+  		   	  if(jasonObj = cJSON_GetObjectItem(messageBody,"ledSwitch"))
+  		   	  {
+  		   	    value=(strncmp(cJSON_GetObjectItem(jasonObj,"ledEnable")->valuestring, "0",1)?1:0);
+			    if(phead->syncCfg.ledSwitch != value )
+			   	phead->syncCfg.ledSwitch=value;
+  		   	  } 		   	  
+  			  phead->syncCfg.ledSyncFlag=SYNC_FLAG_0;
+   			  printf("=>get slave led switch ack\n");
+			  break;
+  		   	}
+    	   case KLINK_SLAVE_SEND_UNCRYPT_WIFI_SETTING_ACK:
+    	   	{
+    	   	  if(jasonObj = cJSON_GetObjectItem(messageBody,"uncrypWifi"))
+  		   	  {
+  		   	    value=atoi(cJSON_GetObjectItem(jasonObj,"encrypt_5g")->valuestring);
+				if(phead->syncCfg.uncriptWifi.encryptMode_5g!=value)
+				   phead->syncCfg.uncriptWifi.encryptMode_5g=value;
+				if(strcmp(phead->syncCfg.uncriptWifi.uncryptSsid_5g,cJSON_GetObjectItem(jasonObj,"ssid_5g")->valuestring))
+				   {
+				      memset(phead->syncCfg.uncriptWifi.uncryptSsid_5g,0,sizeof(phead->syncCfg.uncriptWifi.uncryptSsid_5g));
+					  strcpy(phead->syncCfg.uncriptWifi.uncryptSsid_5g,phead->syncCfg.uncriptWifi.uncryptSsid_5g);
+				   }
+
+				value=atoi(cJSON_GetObjectItem(jasonObj,"encrypt_2g")->valuestring);
+				if(phead->syncCfg.uncriptWifi.encryptMode_2g!=value)
+				   phead->syncCfg.uncriptWifi.encryptMode_2g=value;
+				if(strcmp(phead->syncCfg.uncriptWifi.uncryptSsid_2g,cJSON_GetObjectItem(jasonObj,"ssid_2g")->valuestring))
+				   {
+				      memset(phead->syncCfg.uncriptWifi.uncryptSsid_2g,0,sizeof(phead->syncCfg.uncriptWifi.uncryptSsid_2g));
+					  strcpy(phead->syncCfg.uncriptWifi.uncryptSsid_2g,phead->syncCfg.uncriptWifi.uncryptSsid_2g);
+				   }
+  		   	  }
+	 	      phead->syncCfg.uncriptWifi.uncryptWifiSyncFlag=SYNC_FLAG_0;
+	  
+    		  printf("=>get uncrypt wifi setting ack\n");
+			  break;
+    	   	}
+		   case KLINK_SLAVE_SEND_GUEST_WIFI_SETTING_ACK:
+		   	{
+		   	  if(jasonObj = cJSON_GetObjectItem(messageBody,"guestWifi"))
+  		   	  {
+  		   	    value=atoi(cJSON_GetObjectItem(jasonObj,"guestSwitch_5g")->valuestring);
+				if(phead->syncCfg.guestWifi.guestWifiSwitch_5g!=value)
+				   phead->syncCfg.guestWifi.guestWifiSwitch_5g=value;
+
+				value=atoi(cJSON_GetObjectItem(jasonObj,"guestSwitch_2g")->valuestring);
+				if(phead->syncCfg.guestWifi.guestWifiSwitch_2g!=value)
+				   phead->syncCfg.guestWifi.guestWifiSwitch_2g=value;
+  		   	  }
+			  phead->syncCfg.guestWifi.guestSyncFlag=SYNC_FLAG_0;
+    		  printf("=>get uncrypt wifi setting ack\n");
+	 		 break;	
+		   	}
+  			default:
+  			 break;			
+		}
+		return phead;
+	}
+	else
+	{
+		printf("%s_%d:can not find target updade node,fail...\n",__FUNCTION__,__LINE__);
+		printf("#################\n");
+	}
+}
+
 /*search node*/
 
 KlinkNode_t* serchKlinkListNode(KlinkNode_t*head,KlinkNode_t *pdata)
 {
+    printf("%s_%d: mac=%s\n ",__FUNCTION__,__LINE__,pdata->slaveVersionInfo.slaveMac);
 	KlinkNode_t *phead=head;
 	if(phead==NULL)
 	{
 		printf("head_node is empty\n");
 		return NULL;
 	}
-	while(strcmp(phead->slaveVersionInfo.slaveMac,pdata->slaveVersionInfo.slaveMac)&&phead->next!=NULL)
-	{    
+	while(strcmp(phead->slaveDevideInfo.slaveMacAddr,pdata->slaveVersionInfo.slaveMac)&&phead->next!=NULL)
+	{   
+	    printf("%s_%d: mac=%s\n ",__FUNCTION__,__LINE__,phead->slaveVersionInfo.slaveMac);
 		phead=phead->next;
 	}
-	if(!(strcmp(phead->slaveVersionInfo.slaveMac,pdata->slaveVersionInfo.slaveMac)))
+	if(!(strcmp(phead->slaveDevideInfo.slaveMacAddr,pdata->slaveVersionInfo.slaveMac)))
 	{
 		printf("serch succed klink node data=%s\n",phead->slaveVersionInfo.slaveMac);
 		printf("#################\n");
@@ -302,15 +409,15 @@ KlinkNode_t* deletKlinkListNode(KlinkNode_t*head,KlinkNode_t *pdata)
 	}
 	else
 	{
-		while(strcmp(phead->slaveVersionInfo.slaveMac,pdata->slaveVersionInfo.slaveMac)&&phead->next!=NULL)
+		while(strcmp(phead->slaveDevideInfo.slaveMacAddr,pdata->slaveDevideInfo.slaveMacAddr)&&phead->next!=NULL)
 		{
 			q=phead;
 			phead=phead->next;
 		}
-		if(!strcmp(phead->slaveVersionInfo.slaveMac,pdata->slaveVersionInfo.slaveMac))
+		if(!strcmp(phead->slaveDevideInfo.slaveMacAddr,pdata->slaveDevideInfo.slaveMacAddr))
 		{
 			q->next=phead->next;
-			printf("free %s succed\n",phead->slaveVersionInfo.slaveMac);
+			printf("free %s succed\n",phead->slaveDevideInfo.slaveMacAddr);
 			free(phead);			
 			printf("#################\n");
 		}
@@ -335,8 +442,8 @@ void showKlinkNode(KlinkNode_t*head)
 	{
 	   while(phead->next!=NULL)
 		{
-			printf("show list node date is:slaveMac     [%s]\n",phead->next->slaveVersionInfo.slaveMac);
-			printf("show list node date is:slaveSoftVer [%s]\n",phead->next->slaveVersionInfo.slaveSoftVer);
+			printf("show list node date is:slaveMac     [%s]\n",phead->next->slaveDevideInfo.slaveMacAddr);
+			printf("show list node date is:slaveSoftVer [%s]\n",phead->next->slaveDevideInfo.slaveMacAddr);
 			phead=phead->next;
 		}
 		printf("#################\n");

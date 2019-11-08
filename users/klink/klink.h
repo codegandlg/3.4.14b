@@ -44,7 +44,7 @@ Description  :
 #define KLINK_IF               "wlan0"
 #define MAX_SLAVE_NUM              15
 #define ENUM_DEFAULT               0
-#define HEART_BEAT_TIME_SCHEDULE   5    /*seconds*/
+#define HEART_BEAT_TIME_SCHEDULE   10    /*seconds*/
 #define MESSAGE_BUFFER_SIZE        512
 #define SYNC_FLAG_1                1   //prepare sync
 #define SYNC_FLAG_0                0   //already sync 
