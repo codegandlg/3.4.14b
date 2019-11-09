@@ -438,6 +438,8 @@ char* periodCheckSyncValueToSlave_1(int fd,int messageType,cJSON *messageBody)
 	   sprintf(buff,"%d",ledEnable);
 	   root = cJSON_CreateObject();
 	   cJSON_AddStringToObject(root, "messageType", "4"); //KLINK_MASTER_SEND_LED_SWITCH_TO_SLAVE
+	   cJSON_AddStringToObject(root, "sourceMac", masterMac);	
+	   cJSON_AddStringToObject(root, "destMac", cJSON_GetObjectItem(messageBody,"sourceMac")->valuestring);
 	   cJSON_AddItemToObject(root, "ledSwitch", parameters = cJSON_CreateObject());
 	   	 	  printf("%s_%d: \n",__FUNCTION__,__LINE__);
 	   cJSON_AddStringToObject(parameters, "ledEnable", buff);
@@ -452,6 +454,8 @@ char* periodCheckSyncValueToSlave_1(int fd,int messageType,cJSON *messageBody)
 	 {	
 	   root = cJSON_CreateObject();
 	   cJSON_AddStringToObject(root, "messageType", "6"); //KLINK_MASTER_SEND_UNENCRYP_WIFI_INFO_TO_SLAVE
+	   cJSON_AddStringToObject(root, "sourceMac", masterMac);	
+	   cJSON_AddStringToObject(root, "destMac", cJSON_GetObjectItem(messageBody,"sourceMac")->valuestring);
 	   cJSON_AddItemToObject(root, "uncrypWifi", parameters = cJSON_CreateObject());
 	   memset(buff,0,sizeof(buff));
 	   sprintf(buff,"%d",encrypt_5g);
@@ -484,6 +488,8 @@ char* periodCheckSyncValueToSlave_1(int fd,int messageType,cJSON *messageBody)
        }
 	   root = cJSON_CreateObject();
 	   cJSON_AddStringToObject(root, "messageType", "8"); //KLINK_MASTER_SEND_GUEST_WIFI_INFO_TO_SLAVE
+	   cJSON_AddStringToObject(root, "sourceMac", masterMac);	
+	   cJSON_AddStringToObject(root, "destMac", cJSON_GetObjectItem(messageBody,"sourceMac")->valuestring);
 	   cJSON_AddItemToObject(root, "guestWifi", parameters = cJSON_CreateObject());
 	   printf("%s_%d: \n",__FUNCTION__,__LINE__);
 	   memset(buff,0,sizeof(buff));
@@ -873,19 +879,14 @@ cJSON * masterGenerateMessageHeader(cJSON *root,int messageType,cJSON *messageBo
 		   printf("=>get slave heard bead \n");
 		   break;
 		case KLINK_SALAVE_SEND_LED_SWITCH_ACK:
-		  backupCurrentCfg(messageType);
-		  g_ledSyncState=0;
 		  printf("=>get slave led switch ack\n");
 		   break;
 		  case KLINK_SLAVE_SEND_UNCRYPT_WIFI_SETTING_ACK:
-		  backupCurrentCfg(messageType);
-		  g_unCrypWifiSyncState=0;
+
 		  printf("=>get uncrypt wifi setting ack\n");
 		   break;
-		  case KLINK_SLAVE_SEND_GUEST_WIFI_SETTING_ACK:
-		   printf("===>>>%s_%d: messageType=%d \n",__FUNCTION__,__LINE__,messageType);	   
-		  backupCurrentCfg(messageType);  
-		  g_guestWifiState=0;
+		  case KLINK_SLAVE_SEND_GUEST_WIFI_SETTING_ACK:  
+
 		  printf("=>get uncrypt wifi setting ack\n");
 		   break; 
 		default:
