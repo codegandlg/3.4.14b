@@ -603,11 +603,9 @@ int syncGuestWifiSettings(int fd, int messageType, cJSON *messageBody)
 {
   printf("%s_%d: \n",__FUNCTION__,__LINE__);
    cJSON *jasonObj=NULL;
-   char *pMessageBody=NULL;
    int value=-1;
    int localValue=1;
    char *pResponseMsg=NULL;
-   cJSON *responseJSON=NULL;
   /*for guest network*/
   int disableFlg_2g;
   int disableFlg_5g;
@@ -627,33 +625,39 @@ int syncGuestWifiSettings(int fd, int messageType, cJSON *messageBody)
     {
      if(localValue!=value)
      {
-      localValue=value;
 	  apmib_set(MIB_WLAN_WLAN_DISABLED,(void *)&value);	
+	  if(value==1)
+	  	system("ifconfig wlan0-va1 down");
+	  else if(value==0)
+	  	system("ifconfig wlan0-va1 up");  
      }
     }
 
 	 wlan_idx = 1;
 	 value=(strncmp(cJSON_GetObjectItem(jasonObj,"guestSwitch_2g")->valuestring, "0",1)?1:0);
+	 wlan_idx = old_wlan_idx;
+     vwlan_idx = old_vwlan_idx;
 	 printf("%s_%d: value=%d\n",__FUNCTION__,__LINE__,value);	   
 	  if(apmib_get(MIB_WLAN_WLAN_DISABLED,(void *)&localValue))
 	{
 	   if(localValue!=value)
 	   {
-		localValue=value;
 		apmib_set(MIB_WLAN_WLAN_DISABLED,(void *)&value); 
+	    if(value==1)
+	  	    system("ifconfig wlan1-va1 down");
+	    else if(value==0)
+	  	    system("ifconfig wlan1-va1 up");                
 	   }
 	}
 	if(apmib_update(CURRENT_SETTING) <= 0)
 	{
 	 printf("apmib_update CURRENT_SETTING fail.\n");
 	}    	 
-	 wlan_idx = old_wlan_idx;
-     vwlan_idx = old_vwlan_idx;
    }
-
 	pResponseMsg=slaveGenerateJsonMessageBody(messageType,messageBody,&pResponseMsg);
 	printf("%s_%d:send message=%s \n",__FUNCTION__,__LINE__,pResponseMsg);
 	send(fd, pResponseMsg,strlen(pResponseMsg), 0) ;
+		
 }
 
 
@@ -669,25 +673,22 @@ int syncUncrypWifiSettings(int fd, int messageType, cJSON *messageBody)
 {
   printf("%s_%d: \n",__FUNCTION__,__LINE__);
    cJSON *jasonObj=NULL;
-   char *pMessageBody=NULL;
    char ssidBuf[64]={0};  
    ENCRYPT_T encrypt_5g; 
    char ssid_5g[64]={0};
    ENCRYPT_T encrypt_2g; 
    char ssid_2g[64]={0};
    int value=-1;
+   int setFlag=0;
    int localValue=1;
    int ret=0;
    char *pResponseMsg=NULL;
-   cJSON *responseJSON=NULL;
     int old_wlan_idx;
     int old_vwlan_idx;
 	int settingFlag=0;
 
    if(jasonObj = cJSON_GetObjectItem(messageBody,"uncrypWifi"))
    {
-    printf("%s_%d: \n",__FUNCTION__,__LINE__);
-
 	old_wlan_idx = wlan_idx;
 	old_vwlan_idx = vwlan_idx;
 	vwlan_idx = 0;
@@ -697,7 +698,8 @@ int syncUncrypWifiSettings(int fd, int messageType, cJSON *messageBody)
 	if(encrypt_5g==ENCRYPT_DISABLED)
 	{
 	 apmib_set(MIB_WLAN_ENCRYPT, (void *)&encrypt_5g);
-	 apmib_set(MIB_WLAN_SSID, (void *)&ssid_5g);	
+	 apmib_set(MIB_WLAN_SSID, (void *)&ssid_5g);
+	 setFlag=1;
 	}
     
 	wlan_idx = 1;
@@ -707,22 +709,22 @@ int syncUncrypWifiSettings(int fd, int messageType, cJSON *messageBody)
 	{
 	apmib_set(MIB_WLAN_ENCRYPT, (void *)&encrypt_2g);
 	apmib_set(MIB_WLAN_SSID, (void *)&ssid_2g);	
+	setFlag=1;
 	}
 
 	if(apmib_update(CURRENT_SETTING) <= 0)
     {
       printf("apmib_update CURRENT_SETTING fail.\n");
     }
- 
 	 wlan_idx = old_wlan_idx;
      vwlan_idx = old_vwlan_idx;
    }
-	printf("%s_%d: \n",__FUNCTION__,__LINE__);
 
-	printf("%s_%d: \n",__FUNCTION__,__LINE__);
 	pResponseMsg=slaveGenerateJsonMessageBody(messageType,messageBody,&pResponseMsg);
 	printf("%s_%d:send message=%s \n",__FUNCTION__,__LINE__,pResponseMsg);
 	send(fd, pResponseMsg,strlen(pResponseMsg), 0) ;
+	if(setFlag==1)
+		system("init.sh gw bridge");
 
 }
 
