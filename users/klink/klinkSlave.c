@@ -611,7 +611,7 @@ int syncGuestWifiSettings(int fd, int messageType, cJSON *messageBody)
   int disableFlg_5g;
   int old_wlan_idx;
   int old_vwlan_idx;
-   if(jasonObj = cJSON_GetObjectItem(messageBody,"gustWifi"))
+   if(jasonObj = cJSON_GetObjectItem(messageBody,"guestWifi"))
    {
    	  old_wlan_idx = wlan_idx;
 	  old_vwlan_idx = vwlan_idx;
@@ -635,8 +635,6 @@ int syncGuestWifiSettings(int fd, int messageType, cJSON *messageBody)
 
 	 wlan_idx = 1;
 	 value=(strncmp(cJSON_GetObjectItem(jasonObj,"guestSwitch_2g")->valuestring, "0",1)?1:0);
-	 wlan_idx = old_wlan_idx;
-     vwlan_idx = old_vwlan_idx;
 	 printf("%s_%d: value=%d\n",__FUNCTION__,__LINE__,value);	   
 	  if(apmib_get(MIB_WLAN_WLAN_DISABLED,(void *)&localValue))
 	{
@@ -654,6 +652,8 @@ int syncGuestWifiSettings(int fd, int messageType, cJSON *messageBody)
 	 printf("apmib_update CURRENT_SETTING fail.\n");
 	}    	 
    }
+   	 wlan_idx = old_wlan_idx;
+     vwlan_idx = old_vwlan_idx;
 	pResponseMsg=slaveGenerateJsonMessageBody(messageType,messageBody,&pResponseMsg);
 	printf("%s_%d:send message=%s \n",__FUNCTION__,__LINE__,pResponseMsg);
 	send(fd, pResponseMsg,strlen(pResponseMsg), 0) ;
