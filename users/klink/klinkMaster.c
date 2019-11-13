@@ -53,7 +53,7 @@ static unsigned int g_unCrypWifiSyncState = 1; //0-needn't synnc    1-sync is ne
 static unsigned int g_guestWifiState=1;
 
 static KlinkNode_t g_klinDataPkts;
-static KlinkNode_t* g_pKlinkHead = NULL;
+KlinkNode_t* g_pKlinkHead;
 KlinkNode_t klinkNodeData;
 KlinkNode_t g_syncSettings;
 static char masterMac[17]={0};
@@ -260,10 +260,12 @@ KlinkNode_t* createKlinkLinkList()
   return pKlinkHead;
 }
 
+
 KlinkNode_t* setMeshLinklistDataToMib(KlinkNode_t*head)
 {	
 	KlinkNode_t *phead=head;
-	char tmpBuf[128]={0};
+	char tmpBuf[64]={0};
+	char tmpSn[32]={0};
 	int i=0;
 	if(phead==NULL)
 	{
@@ -271,76 +273,86 @@ KlinkNode_t* setMeshLinklistDataToMib(KlinkNode_t*head)
 	}
 	else
 	{
-	   while((phead->next!=NULL)&&(i<phead->slaveMeshNum))
-		{  		   
-		   sprintf(tmpBuf,"%d;%s;%s",phead->slaveMeshNum,phead->next->slaveVersionInfo.slaveMac,phead->next->slaveVersionInfo.slaveSoftVer);
+	   while((phead->next!=NULL))
+		{  
+		   memset(tmpBuf,0,sizeof(tmpBuf));
+		   memset(tmpSn,0,sizeof(tmpSn));
+		   sprintf(tmpBuf,"%s;%s",phead->next->slaveDevideInfo.slaveMacAddr,phead->next->slaveDevideInfo.slaveFwVersion);
 		   printf("%s_%d:tmpBuf=%s\n ",__FUNCTION__,__LINE__,tmpBuf);
+		   printf("%s_%d:sn=%s\n ",__FUNCTION__,__LINE__,phead->next->slaveDevideInfo.sn);
+		   if(strlen(phead->next->slaveDevideInfo.sn)==0)
+             sprintf(tmpSn,"%s",DEFAULT_SN);
+		   else
+		     sprintf(tmpSn,"%s",phead->next->slaveDevideInfo.sn);
+		   
            i++;
 		   phead=phead->next;
 		   switch(i)
 		   {
 		   case SLAVE1:
 	        apmib_set(MIB_KLINK_SLAVE1_SOFT_VERSION, (void *)tmpBuf);
-			memset(tmpBuf,0,sizeof(tmpBuf));
+			apmib_set(MIB_KLINK_SLAVE1_SN, (void *)tmpSn);
+		   		   printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 		    break;
 		   case SLAVE2:
 	        apmib_set(MIB_KLINK_SLAVE2_SOFT_VERSION, (void *)tmpBuf);
-			memset(tmpBuf,0,sizeof(tmpBuf));
+			apmib_set(MIB_KLINK_SLAVE2_SN, (void *)tmpSn);
+		     printf("%s_%d:\n ",__FUNCTION__,__LINE__);
 		    break;
 		   case SLAVE3:
 			 apmib_set(MIB_KLINK_SLAVE3_SOFT_VERSION, (void *)tmpBuf);
-			 memset(tmpBuf,0,sizeof(tmpBuf));
+			 apmib_set(MIB_KLINK_SLAVE3_SN, (void *)tmpSn);
 			 break;
 		   case SLAVE4:
 			 apmib_set(MIB_KLINK_SLAVE4_SOFT_VERSION, (void *)tmpBuf);
-			 memset(tmpBuf,0,sizeof(tmpBuf));
+			 apmib_set(MIB_KLINK_SLAVE4_SN, (void *)tmpSn);
 			 break;
 		   case SLAVE5:
 			 apmib_set(MIB_KLINK_SLAVE5_SOFT_VERSION, (void *)tmpBuf);
-			 memset(tmpBuf,0,sizeof(tmpBuf));
+			 apmib_set(MIB_KLINK_SLAVE5_SN, (void *)tmpSn);
 			 break;
 		   case SLAVE6:
 			  apmib_set(MIB_KLINK_SLAVE6_SOFT_VERSION, (void *)tmpBuf);
-			  memset(tmpBuf,0,sizeof(tmpBuf));
+			  apmib_set(MIB_KLINK_SLAVE6_SN, (void *)tmpSn);
 			  break;
 		   case SLAVE7:
 			 apmib_set(MIB_KLINK_SLAVE7_SOFT_VERSION, (void *)tmpBuf);
-			 memset(tmpBuf,0,sizeof(tmpBuf));
+			 apmib_set(MIB_KLINK_SLAVE7_SN, (void *)tmpSn);
 			 break;
 		   case SLAVE8:
 			 apmib_set(MIB_KLINK_SLAVE8_SOFT_VERSION, (void *)tmpBuf);
-			 memset(tmpBuf,0,sizeof(tmpBuf));
+			 apmib_set(MIB_KLINK_SLAVE8_SN, (void *)tmpSn);
 			 break;
 		   case SLAVE9:
 			  apmib_set(MIB_KLINK_SLAVE9_SOFT_VERSION, (void *)tmpBuf);
-			  memset(tmpBuf,0,sizeof(tmpBuf));
+			  apmib_set(MIB_KLINK_SLAVE9_SN, (void *)tmpSn);
 			  break;
 		   case SLAVE10:
 			 apmib_set(MIB_KLINK_SLAVE10_SOFT_VERSION, (void *)tmpBuf);
-			 memset(tmpBuf,0,sizeof(tmpBuf));
+			 apmib_set(MIB_KLINK_SLAVE10_SN, (void *)tmpSn);
 			 break;
 		   case SLAVE11:
 			 apmib_set(MIB_KLINK_SLAVE11_SOFT_VERSION, (void *)tmpBuf);
-			 memset(tmpBuf,0,sizeof(tmpBuf));
+			 apmib_set(MIB_KLINK_SLAVE11_SN, (void *)tmpSn);
 			 break;
 		   case SLAVE12:
 			  apmib_set(MIB_KLINK_SLAVE12_SOFT_VERSION, (void *)tmpBuf);
-			  memset(tmpBuf,0,sizeof(tmpBuf));
+			  apmib_set(MIB_KLINK_SLAVE12_SN, (void *)tmpSn);
 			  break;
 		   case SLAVE13:
 			 apmib_set(MIB_KLINK_SLAVE13_SOFT_VERSION, (void *)tmpBuf);
-			 memset(tmpBuf,0,sizeof(tmpBuf));
+			 apmib_set(MIB_KLINK_SLAVE13_SN, (void *)tmpSn);
 			 break;
 		   case SLAVE14:
 			 apmib_set(MIB_KLINK_SLAVE14_SOFT_VERSION, (void *)tmpBuf);
-			 memset(tmpBuf,0,sizeof(tmpBuf));
+			 apmib_set(MIB_KLINK_SLAVE14_SN, (void *)tmpSn);
 			 break;
 		   case SLAVE15:
 			  apmib_set(MIB_KLINK_SLAVE15_SOFT_VERSION, (void *)tmpBuf);
-			  memset(tmpBuf,0,sizeof(tmpBuf));
+			  apmib_set(MIB_KLINK_SLAVE15_SN, (void *)tmpSn);
 		   case SLAVE16:
 			  apmib_set(MIB_KLINK_SLAVE16_SOFT_VERSION, (void *)tmpBuf);
-			  memset(tmpBuf,0,sizeof(tmpBuf));
+			  apmib_set(MIB_KLINK_SLAVE16_SN, (void *)tmpSn);
 			  break;
 		   default:
 		   	  printf("%s_%d:index error,index numbre is %d \n",__FUNCTION__,__LINE__,i);	
@@ -597,9 +609,10 @@ void cjsonToMessageNode(cJSON *messageBody,KlinkNode_t *messageNode)
   case KLINK_SLAVE_REPORT_DEVICE_INFO:
   	{
   	   strcpy(messageNode->slaveDevideInfo.slaveMacAddr,cJSON_GetObjectItem(messageBody,"sourceMac")->valuestring);
-	   if(jasonObj = cJSON_GetObjectItem(messageBody,"slaveVersion"))
+	   if(jasonObj = cJSON_GetObjectItem(messageBody,"devInfo"))
 	   {
          strcpy(messageNode->slaveDevideInfo.slaveFwVersion,cJSON_GetObjectItem(jasonObj,"slaveSoftVer")->valuestring);
+		 strcpy(messageNode->slaveDevideInfo.sn,cJSON_GetObjectItem(jasonObj,"sn")->valuestring);
        } 
 	   if(jasonObj = cJSON_GetObjectItem(messageBody,"ledSwitch"))
 	   {
@@ -832,7 +845,9 @@ int addSlaveDeviceInfoToLinkList(int fd, cJSON *messageBody,KlinkNode_t *message
    int messageType=0;
 
    cjsonToMessageNode(messageBody,messageNode);
+   printf("==============>version=%s<=======\n",messageNode->slaveDevideInfo.slaveFwVersion);
    addKlinkListNode_1(g_pKlinkHead,messageNode);
+   setMeshLinklistDataToMib(g_pKlinkHead);
    messageType = atoi(cJSON_GetObjectItem(messageBody,"messageType")->valuestring);
    pResponseMsg=masterGenerateJsonMessageBody(messageType,messageBody,&pResponseMsg);
    printf("%s_%d:send version ack data [%s]  \n",__FUNCTION__,__LINE__,pResponseMsg);

@@ -19,6 +19,7 @@ Modifier     :
 Description  : 
 
 */
+#include<unistd.h>
 #include "apmib.h"
 
 #ifndef EXIT_FAILURE		
@@ -48,6 +49,7 @@ Description  :
 #define MESSAGE_BUFFER_SIZE        512
 #define SYNC_FLAG_1                1   //prepare sync
 #define SYNC_FLAG_0                0   //already sync 
+#define DEFAULT_SN                 "000000000000000000000"
 
 
 typedef enum  
@@ -95,6 +97,7 @@ typedef struct KlinkSlaveDeviceInfo
 {
 	char slaveFwVersion[18];
 	char slaveMacAddr[18];
+	char sn[32];
 }KlinkSlaveDeviceInfo_t;
 
 
@@ -183,6 +186,18 @@ typedef struct etherAddr
 #define TIME_INTERVAL              60
 
 extern int app_event_handler(int fd,char *buffer);
+extern KlinkNode_t* g_pKlinkHead;
+
+#define DEBUG_ON_TAG_FILE	"/var/run/DEBUG_ON"
+
+#define TRACE_DEBUG(fmt, args...)	 \
+	{											\
+		if(access( DEBUG_ON_TAG_FILE, F_OK ) >= 0) \
+		{										\
+			printf("[Debug]:"fmt"\n", ##args); \
+		}										\
+	}	
+
 
 
 

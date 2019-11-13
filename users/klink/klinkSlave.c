@@ -296,7 +296,7 @@ int getGetwayIp2(char gatewayIp[])
    fp=fopen("/etc/resolv.conf","r");
    if(fp == NULL)
         {
-          printf("open /etc/resolv.conf failed\n");     
+          TRACE_DEBUG("open /etc/resolv.conf failed\n");     
         return 1;
         }
    while(fgets(buff,64,fp))
@@ -342,7 +342,7 @@ cJSON * slaveGenerateMessageHeader(cJSON *root,int messageType,cJSON *messageBod
 		   break;
 		case KLINK_MASTER_REPORT_DEVICE_ACK:  //messageType=2
 		   cJSON_AddStringToObject(pJson, "messageType", "3");
-		   printf("=>get_master_version_ack\n");
+		   TRACE_DEBUG("=>get_master_version_ack\n");
 		   break;
 		case KLINK_HEARD_BEAD_SYNC_MESSAGE:
 		   cJSON_AddStringToObject(pJson, "messageType", "3");
@@ -361,10 +361,10 @@ cJSON * slaveGenerateMessageHeader(cJSON *root,int messageType,cJSON *messageBod
 		   messageType=KLINK_HEARD_BEAD_SYNC_MESSAGE; 
 		   break;
     }
-		printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+		TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
 		cJSON_AddStringToObject(pJson, "sourceMac", slaveMac);
 	    cJSON_AddStringToObject(pJson, "destMac", cJSON_GetObjectItem(messageBody,"sourceMac")->valuestring);
-	   	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+	   	TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
 	  //  cJSON_AddStringToObject(pJson, "slaveMac", macAddr);
 	    return pJson;
 }
@@ -386,24 +386,27 @@ const char* slaveGenerateJsonMessageBody(int messageType,cJSON *messageBody,char
 	ENCRYPT_T encrypt_2g;
 	char ssidBuf_5g[64]={0};   
     char ssidBuf_2g[64]={0};
- 	printf("%s_%d:\n ",__FUNCTION__,__LINE__);		  
+	char sn[64]={0};
+ 	TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);		  
 	topRoot = cJSON_CreateObject();
 	 if (!topRoot)
     {
-        printf("cJsonCreateObj failed!");
+        TRACE_DEBUG("cJsonCreateObj failed!");
         return NULL;
     }
 	 
     /* generate header */
     topRoot=slaveGenerateMessageHeader(topRoot,messageType,messageBody);
-	 	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+	 	TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
  switch(messageType)
  {
     case KLINK_START:                     	//messageType=0
      {
-       cJSON_AddItemToObject(topRoot, "slaveVersion", root = cJSON_CreateObject());
+       cJSON_AddItemToObject(topRoot, "devInfo", root = cJSON_CreateObject());
 	   cJSON_AddStringToObject(root, "slaveSoftVer", fwVersion);
-		printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+	   apmib_get( MIB_CUSTOMER_HW_SERIAL_NUM,  (void *)&sn);
+	   cJSON_AddStringToObject(root, "sn", sn);
+		TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
 
 	    /*for led switch*/
 	   apmib_get(MIB_LED_ENABLE, (void *)&ledEnable);
@@ -432,7 +435,7 @@ const char* slaveGenerateJsonMessageBody(int messageType,cJSON *messageBody,char
 	   
 	   wlan_idx = old_wlan_idx;
        vwlan_idx = old_vwlan_idx;	   
-	   printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+	   TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
 
 	   /*for uncrypt wifi Cfg*/
 	   cJSON_AddItemToObject(topRoot, "uncrypWifi", root = cJSON_CreateObject());
@@ -444,7 +447,7 @@ const char* slaveGenerateJsonMessageBody(int messageType,cJSON *messageBody,char
 	   sprintf(buff,"%d",encrypt_2g);
 	   cJSON_AddStringToObject(root, "encrypt_2g", buff);
 	   cJSON_AddStringToObject(root, "uncryptSsid_2g", ssidBuf_2g);
-		printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+		TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
 
 	    /*for guest wifi Cfg*/
 	   cJSON_AddItemToObject(topRoot,"guestWifi", root = cJSON_CreateObject());
@@ -454,13 +457,13 @@ const char* slaveGenerateJsonMessageBody(int messageType,cJSON *messageBody,char
 	   memset(buff,0,sizeof(buff));
 	   sprintf(buff,"%d",disableFlg_2g);
 	   cJSON_AddStringToObject(root, "guestSwitch_2g", buff); 
-	   printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+	   TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
      }
 
 	 
 	 break;
   case KLINK_MASTER_REPORT_DEVICE_ACK:  //messageType=2
-     printf("=>get_master_version_ack\n");
+     TRACE_DEBUG("=>get_master_version_ack\n");
 	 break;
   case KLINK_HEARD_BEAD_SYNC_MESSAGE:
   	  cJSON_AddItemToObject(topRoot, "heartbeat", root = cJSON_CreateObject());
@@ -516,10 +519,10 @@ const char* slaveGenerateJsonMessageBody(int messageType,cJSON *messageBody,char
 	   cJSON_AddItemToObject(topRoot,"guestWifi", root = cJSON_CreateObject());
 	   memset(buff,0,sizeof(buff));
 	   sprintf(buff,"%d",disableFlg_5g);
-	   cJSON_AddStringToObject(root, "guestSwitch_5g", disableFlg_5g);
+	   cJSON_AddStringToObject(root, "guestSwitch_5g", buff);
 	   memset(buff,0,sizeof(buff));
 	   sprintf(buff,"%d",disableFlg_2g);
-	   cJSON_AddStringToObject(root, "guestSwitch_2g", disableFlg_2g); 
+	   cJSON_AddStringToObject(root, "guestSwitch_2g", buff); 
 	   break;
    	 }
   default:
@@ -527,7 +530,7 @@ const char* slaveGenerateJsonMessageBody(int messageType,cJSON *messageBody,char
   	 messageType=KLINK_HEARD_BEAD_SYNC_MESSAGE; 
   	 break;
  }
- printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+ TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
  	*pMessage = cJSON_Print(topRoot);  
 	cJSON_Delete(topRoot);	
 	return *pMessage;
@@ -556,7 +559,7 @@ int _slave parseMasterConf(int fd, cJSON *jason_obj)
 */
 int syncMasterLedSwitch(int fd, int messageType, cJSON *messageBody)
 {
-  printf("%s_%d: \n",__FUNCTION__,__LINE__);
+  TRACE_DEBUG("%s_%d: \n",__FUNCTION__,__LINE__);
    cJSON *jasonObj=NULL;
    char *pMessageBody=NULL;
    char tmp[2]={0};
@@ -567,9 +570,9 @@ int syncMasterLedSwitch(int fd, int messageType, cJSON *messageBody)
 
    if(jasonObj = cJSON_GetObjectItem(messageBody,"ledSwitch"))
    {
-    printf("%s_%d: \n",__FUNCTION__,__LINE__);
+    TRACE_DEBUG("%s_%d: \n",__FUNCTION__,__LINE__);
 	 value=(strncmp(cJSON_GetObjectItem(jasonObj,"ledEnable")->valuestring, "0",1)?1:0);
-	  printf("%s_%d: value=%d\n",__FUNCTION__,__LINE__,value);
+	  TRACE_DEBUG("%s_%d: value=%d\n",__FUNCTION__,__LINE__,value);
 
      if(apmib_get(MIB_LED_ENABLE,(void *)&localValue))
     {
@@ -579,13 +582,13 @@ int syncMasterLedSwitch(int fd, int messageType, cJSON *messageBody)
 	  apmib_set(MIB_LED_ENABLE,(void *)&value);	
 	  if(apmib_update(CURRENT_SETTING) <= 0)
          {
-           printf("apmib_update CURRENT_SETTING fail.\n");
+           TRACE_DEBUG("apmib_update CURRENT_SETTING fail.\n");
          }
      }
     }
    }
 	pResponseMsg=slaveGenerateJsonMessageBody(messageType,messageBody,&pResponseMsg);
-	printf("%s_%d:send message=%s \n",__FUNCTION__,__LINE__,pResponseMsg);
+	TRACE_DEBUG("%s_%d:send message=%s \n",__FUNCTION__,__LINE__,pResponseMsg);
 	send(fd, pResponseMsg,strlen(pResponseMsg), 0) ;
 
 }
@@ -601,7 +604,7 @@ int syncMasterLedSwitch(int fd, int messageType, cJSON *messageBody)
 */
 int syncGuestWifiSettings(int fd, int messageType, cJSON *messageBody)
 {
-  printf("%s_%d: \n",__FUNCTION__,__LINE__);
+  TRACE_DEBUG("%s_%d: \n",__FUNCTION__,__LINE__);
    cJSON *jasonObj=NULL;
    int value=-1;
    int localValue=1;
@@ -617,9 +620,9 @@ int syncGuestWifiSettings(int fd, int messageType, cJSON *messageBody)
 	  old_vwlan_idx = vwlan_idx;
 	  vwlan_idx = 2;
       wlan_idx = 0;
-    printf("%s_%d: \n",__FUNCTION__,__LINE__);
+    TRACE_DEBUG("%s_%d: \n",__FUNCTION__,__LINE__);
 	 value=(strncmp(cJSON_GetObjectItem(jasonObj,"guestSwitch_5g")->valuestring, "0",1)?1:0);
-	  printf("%s_%d: value=%d\n",__FUNCTION__,__LINE__,value);
+	  TRACE_DEBUG("%s_%d: value=%d\n",__FUNCTION__,__LINE__,value);
      
      if(apmib_get(MIB_WLAN_WLAN_DISABLED,(void *)&localValue))
     {
@@ -635,7 +638,7 @@ int syncGuestWifiSettings(int fd, int messageType, cJSON *messageBody)
 
 	 wlan_idx = 1;
 	 value=(strncmp(cJSON_GetObjectItem(jasonObj,"guestSwitch_2g")->valuestring, "0",1)?1:0);
-	 printf("%s_%d: value=%d\n",__FUNCTION__,__LINE__,value);	   
+	 TRACE_DEBUG("%s_%d: value=%d\n",__FUNCTION__,__LINE__,value);	   
 	  if(apmib_get(MIB_WLAN_WLAN_DISABLED,(void *)&localValue))
 	{
 	   if(localValue!=value)
@@ -649,13 +652,13 @@ int syncGuestWifiSettings(int fd, int messageType, cJSON *messageBody)
 	}
 	if(apmib_update(CURRENT_SETTING) <= 0)
 	{
-	 printf("apmib_update CURRENT_SETTING fail.\n");
+	 TRACE_DEBUG("apmib_update CURRENT_SETTING fail.\n");
 	}    	 
    }
    	 wlan_idx = old_wlan_idx;
      vwlan_idx = old_vwlan_idx;
 	pResponseMsg=slaveGenerateJsonMessageBody(messageType,messageBody,&pResponseMsg);
-	printf("%s_%d:send message=%s \n",__FUNCTION__,__LINE__,pResponseMsg);
+	TRACE_DEBUG("%s_%d:send message=%s \n",__FUNCTION__,__LINE__,pResponseMsg);
 	send(fd, pResponseMsg,strlen(pResponseMsg), 0) ;
 		
 }
@@ -671,7 +674,7 @@ int syncGuestWifiSettings(int fd, int messageType, cJSON *messageBody)
 */
 int syncUncrypWifiSettings(int fd, int messageType, cJSON *messageBody)
 {
-  printf("%s_%d: \n",__FUNCTION__,__LINE__);
+  TRACE_DEBUG("%s_%d: \n",__FUNCTION__,__LINE__);
    cJSON *jasonObj=NULL;
    char ssidBuf[64]={0};  
    ENCRYPT_T encrypt_5g; 
@@ -714,14 +717,14 @@ int syncUncrypWifiSettings(int fd, int messageType, cJSON *messageBody)
 
 	if(apmib_update(CURRENT_SETTING) <= 0)
     {
-      printf("apmib_update CURRENT_SETTING fail.\n");
+      TRACE_DEBUG("apmib_update CURRENT_SETTING fail.\n");
     }
 	 wlan_idx = old_wlan_idx;
      vwlan_idx = old_vwlan_idx;
    }
 
 	pResponseMsg=slaveGenerateJsonMessageBody(messageType,messageBody,&pResponseMsg);
-	printf("%s_%d:send message=%s \n",__FUNCTION__,__LINE__,pResponseMsg);
+	TRACE_DEBUG("%s_%d:send message=%s \n",__FUNCTION__,__LINE__,pResponseMsg);
 	send(fd, pResponseMsg,strlen(pResponseMsg), 0) ;
 	if(setFlag==1)
 		system("init.sh gw bridge");
@@ -752,7 +755,7 @@ void _slave slaveReportDeviceInfoToMaster(int sd, int messageType, cJSON *messag
 	cJSON *parameters=NULL;
 	int localValue=1;
 	
-	printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+	TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
 
     if(apmib_get(MIB_FIRST_LOGIN,(void *)&localValue))
     {
@@ -762,13 +765,13 @@ void _slave slaveReportDeviceInfoToMaster(int sd, int messageType, cJSON *messag
 	  apmib_set(MIB_FIRST_LOGIN,(void *)&localValue);	
 	  if(apmib_update(CURRENT_SETTING) <= 0)
          {
-           printf("apmib_update CURRENT_SETTING fail.\n");
+           TRACE_DEBUG("apmib_update CURRENT_SETTING fail.\n");
          }
      }
     }
 	
     stringMessage=slaveGenerateJsonMessageBody(messageType,messageBody,&stringMessage);
-	printf("%s_%d:send message=%s \n",__FUNCTION__,__LINE__,stringMessage);
+	TRACE_DEBUG("%s_%d:send message=%s \n",__FUNCTION__,__LINE__,stringMessage);
 	send(sd, stringMessage,strlen(stringMessage), 0) ;
 }
 
@@ -783,13 +786,13 @@ int sendHeardBeatMessage(int fd,int messageType, cJSON *messageBody)
   cJSON *topRoot=NULL;
   cJSON *root=NULL;
   cJSON *parameters=NULL;
-  printf("%s_%d:\n ",__FUNCTION__,__LINE__);
+  TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
  while(1) 
  {
  if(upSecond() - g_lastSlaveCheckTime > HEART_BEAT_TIME_SCHEDULE)	
   {
    stringMessage=slaveGenerateJsonMessageBody(messageType,messageBody,&stringMessage);
-   printf("%s_%d:send message=%s \n",__FUNCTION__,__LINE__,stringMessage);
+   TRACE_DEBUG("%s_%d:send message=%s \n",__FUNCTION__,__LINE__,stringMessage);
    send(fd, stringMessage,strlen(stringMessage), 0) ;
    g_lastSlaveCheckTime = upSecond();
   break;
@@ -806,7 +809,7 @@ int _slave klinkSlaveStateMaching(int sd,int messageType,cJSON *messageBody)
      slaveReportDeviceInfoToMaster(sd,messageType,messageBody);   //messageType=1
 	 break;
   case KLINK_MASTER_REPORT_DEVICE_ACK:                 //messageType=2
-     printf("=>get_master_version_ack\n");
+     TRACE_DEBUG("=>get_master_version_ack\n");
 	 break;
   case KLINK_HEARD_BEAD_SYNC_MESSAGE:
      sendHeardBeatMessage(sd,messageType,messageBody);  
@@ -828,7 +831,7 @@ int _slave klinkSlaveStateMaching(int sd,int messageType,cJSON *messageBody)
 
   if(messageType==KLINK_MASTER_REPORT_DEVICE_ACK)
    {
-     printf("%s_%d: slave prepare send heartBeat sync...\n",__FUNCTION__,__LINE__);
+     TRACE_DEBUG("%s_%d: slave prepare send heartBeat sync...\n",__FUNCTION__,__LINE__);
      sendHeardBeatMessage(sd,messageType,messageBody);   
    }
 }
@@ -839,11 +842,11 @@ int _slave parseMessageFromMaster(int sd, char* masterMessage)
     cJSON *json=NULL;
 	int messageType=-1;
 
-    printf("%s_%d:get master message[%s] \n",__FUNCTION__,__LINE__,masterMessage);
+    TRACE_DEBUG("%s_%d:get master message[%s] \n",__FUNCTION__,__LINE__,masterMessage);
     json = cJSON_Parse(masterMessage);
     if (!json)
     {
-        printf("Error before: [%s]\n", cJSON_GetErrorPtr());
+        TRACE_DEBUG("Error before: [%s]\n", cJSON_GetErrorPtr());
     }
     else
     {
@@ -856,7 +859,7 @@ int _slave parseMessageFromMaster(int sd, char* masterMessage)
 	    if(strcmp(cJSON_GetObjectItem(json,"destMac")->valuestring,slaveMac))
 		return 0;
 	  }
-	 printf("%s_%d:messageType=%d\n ",__FUNCTION__,__LINE__,messageType);
+	 TRACE_DEBUG("%s_%d:messageType=%d\n ",__FUNCTION__,__LINE__,messageType);
 	 klinkSlaveStateMaching(sd,messageType,json);
      
     }
@@ -882,11 +885,11 @@ int main(int argc,char **argv)
 	routeTableFlag2=getGetwayIp2(ip);
 	if((routeTableFlag!=0)&&(routeTableFlag2!=0))
 	{
-	 printf("%s_%d:get gateway ip fail\n",__FUNCTION__,__LINE__);
+	 TRACE_DEBUG("%s_%d:get gateway ip fail\n",__FUNCTION__,__LINE__);
 	 return 0;
 	}
 	
-    printf("=slave gateway ip=%s\n", ip );
+    TRACE_DEBUG("=slave gateway ip=%s\n", ip );
 	server_addr.sin_addr.s_addr = inet_addr(ip);  
     server_addr.sin_port = htons(KLINK_PORT);
     if(connect(sock,(struct sockaddr*)&server_addr, sizeof(struct sockaddr_in)) < 0)
@@ -934,7 +937,7 @@ int main(int argc,char **argv)
 			  ERR_EXIT("server close"); 
             }
            // writen(fd_stdout, recvbuf, ret);
-           printf("==>received messagerom maser:\n%s \n",recvbuf);
+           TRACE_DEBUG("==>received messagerom maser:\n%s \n",recvbuf);
 		   //send(sock, "hello", sizeof("hello"), 0) ;
 		   
 		   parseMessageFromMaster(sock, (char*)recvbuf);
