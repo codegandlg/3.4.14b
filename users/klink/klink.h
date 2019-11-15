@@ -70,8 +70,8 @@ typedef enum
   KLINK_MASTER_SEND_LED_SWITCH_TO_SLAVE=4, 
   KLINK_SALAVE_SEND_LED_SWITCH_ACK=5, 
 
-  KLINK_MASTER_SEND_UNENCRYP_WIFI_INFO_TO_SLAVE=6, 
-  KLINK_SLAVE_SEND_UNCRYPT_WIFI_SETTING_ACK=7, 
+  KLINK_MASTER_SEND_WIFI_CFG_INFO_TO_SLAVE=6, 
+  KLINK_SLAVE_SEND_WIFI_CFG_SETTING_ACK=7, 
 
   KLINK_MASTER_SEND_GUEST_WIFI_INFO_TO_SLAVE=8, 
   KLINK_SLAVE_SEND_GUEST_WIFI_SETTING_ACK=9, 
@@ -103,10 +103,16 @@ typedef struct KlinkSlaveDeviceInfo
 
 typedef struct uncryptWifiSetting
 {
- ENCRYPT_T encryptMode_2g;
- char uncryptSsid_2g[64]; 
- ENCRYPT_T encryptMode_5g;
- char uncryptSsid_5g[64];
+ ENCRYPT_T encrypt_2g;
+ char ssid_2g[64]; 
+ int auth_2g;
+ int cipher_2g;
+ char psk_2g[64];
+ ENCRYPT_T encrypt_5g;
+ char ssid_5g[64];
+ int auth_5g;
+ int cipher_5g;
+ char psk_5g[64];
  int uncryptWifiSyncFlag;
 }uncryptWifiSetting_t;
 
@@ -121,7 +127,7 @@ typedef struct meshSeting
 {
  int ledSwitch;
  int ledSyncFlag;
- uncryptWifiSetting_t uncriptWifi;
+ uncryptWifiSetting_t wifiCfg;
  guestWifiSetting_t guestWifi;
 }meshSetting_t;
 

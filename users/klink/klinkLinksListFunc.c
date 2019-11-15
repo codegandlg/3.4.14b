@@ -39,8 +39,6 @@ KlinkNode_t* initKlinkListHead()
    head->slaveMeshNum=0;
    memset(&(head->slaveVersionInfo),0,sizeof(KlinkSlaveVersion_t));
    head->next=NULL;
-   TRACE_DEBUG("init head succed!\n");
-   TRACE_DEBUG("#################\n");
    return head;
 } 
 
@@ -62,8 +60,6 @@ int destroyKlinkList( KlinkNode_t *head)
 /*cleart link list node*/
 int clearKlinkList( KlinkNode_t *head)  
 {  
-	TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
-
     KlinkNode_t *p,*q;  
     if(head==NULL)  
         return 0;  
@@ -91,37 +87,41 @@ KlinkNode_t *addKlinkListNode_1(KlinkNode_t*head,KlinkNode_t *pdata)
    else
    { 
 	while(phead->next!=NULL)   
-	{   TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
+	{   
 	    /*if found same slave node already in the link list,just update node data*/
 	    if(!strcmp(phead->next->slaveDevideInfo.slaveMacAddr,pdata->slaveDevideInfo.slaveMacAddr))
 	    {
-	    TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
-	      TRACE_DEBUG("==>%s_%d:found same mesh device in the link node list\n",__FUNCTION__,__LINE__);
 		  switch(pdata->klinkMsgStaMachine)
 		  {
 		    case KLINK_SLAVE_REPORT_DEVICE_INFO:
 		    {
-		    TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
 		     /*slave device info*/
 		     strcpy(phead->next->slaveDevideInfo.slaveMacAddr,pdata->slaveDevideInfo.slaveMacAddr);
 			 strcpy(phead->next->slaveDevideInfo.slaveFwVersion,pdata->slaveDevideInfo.slaveFwVersion);
 			 strcpy(phead->next->slaveDevideInfo.sn,pdata->slaveDevideInfo.sn);
-               TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
+
              /*slave led switch cfg*/
 			 phead->next->syncCfg.ledSwitch=pdata->syncCfg.ledSwitch;
-			 TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
 
              /*slave uncrypt wifi cfg*/
-			 phead->next->syncCfg.uncriptWifi.encryptMode_5g=pdata->syncCfg.uncriptWifi.encryptMode_5g;
-			 strcpy(phead->next->syncCfg.uncriptWifi.uncryptSsid_5g,pdata->syncCfg.uncriptWifi.uncryptSsid_5g);
-			 phead->next->syncCfg.uncriptWifi.encryptMode_2g=pdata->syncCfg.uncriptWifi.encryptMode_2g;
-			 strcpy(phead->next->syncCfg.uncriptWifi.uncryptSsid_2g,pdata->syncCfg.uncriptWifi.uncryptSsid_2g);
-			 TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
+			 phead->next->syncCfg.wifiCfg.encrypt_5g=pdata->syncCfg.wifiCfg.encrypt_5g;
+			  memset(phead->next->syncCfg.wifiCfg.ssid_5g,0,sizeof(phead->next->syncCfg.wifiCfg.ssid_5g));
+			 strcpy(phead->next->syncCfg.wifiCfg.ssid_5g,pdata->syncCfg.wifiCfg.ssid_5g);
+			 phead->next->syncCfg.wifiCfg.auth_5g=pdata->syncCfg.wifiCfg.auth_5g;
+		     phead->next->syncCfg.wifiCfg.cipher_5g=pdata->syncCfg.wifiCfg.cipher_5g;
+			 memset(phead->next->syncCfg.wifiCfg.psk_5g,0,sizeof(phead->next->syncCfg.wifiCfg.psk_5g));
+		     strcpy(phead->next->syncCfg.wifiCfg.psk_5g,pdata->syncCfg.wifiCfg.psk_5g);
+			 
+			 phead->next->syncCfg.wifiCfg.encrypt_2g=pdata->syncCfg.wifiCfg.encrypt_2g;
+			 strcpy(phead->next->syncCfg.wifiCfg.ssid_2g,pdata->syncCfg.wifiCfg.ssid_2g);
+			 phead->next->syncCfg.wifiCfg.auth_2g=pdata->syncCfg.wifiCfg.auth_2g;
+		     phead->next->syncCfg.wifiCfg.cipher_2g=pdata->syncCfg.wifiCfg.cipher_2g;
+		     strcpy(phead->next->syncCfg.wifiCfg.psk_2g,pdata->syncCfg.wifiCfg.psk_2g);
+
 
 			 /*guest wifi cfg*/
 			 phead->next->syncCfg.guestWifi.guestWifiSwitch_5g= pdata->syncCfg.guestWifi.guestWifiSwitch_5g;
 			 phead->next->syncCfg.guestWifi.guestWifiSwitch_2g= pdata->syncCfg.guestWifi.guestWifiSwitch_2g;
-			 TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
 			 break;
 		    }
 			case KLINK_HEARD_BEAD_SYNC_MESSAGE:
@@ -134,27 +134,39 @@ KlinkNode_t *addKlinkListNode_1(KlinkNode_t*head,KlinkNode_t *pdata)
 			 	 phead->next->syncCfg.ledSwitch=pdata->syncCfg.ledSwitch;			 	
 			 break;
 			}
-		    case KLINK_SLAVE_SEND_UNCRYPT_WIFI_SETTING_ACK:
+		    case KLINK_SLAVE_SEND_WIFI_CFG_SETTING_ACK:
 		    {
-		      if((phead->next->syncCfg.uncriptWifi.encryptMode_5g!=ENCRYPT_DISABLED)&&
-			  (phead->next->syncCfg.uncriptWifi.encryptMode_2g!=ENCRYPT_DISABLED))
+#if 0
+		      if((phead->next->syncCfg.wifiCfg.encrypt_5g!=ENCRYPT_DISABLED)&&
+			  (phead->next->syncCfg.wifiCfg.encrypt_2g!=ENCRYPT_DISABLED))
 		      {
 		     	 break;
 		      }
 			  else
+#endif
 			  {
-			     phead->next->syncCfg.uncriptWifi.encryptMode_5g=pdata->syncCfg.uncriptWifi.encryptMode_5g;
-				 if(strcmp(phead->next->syncCfg.uncriptWifi.uncryptSsid_5g,pdata->syncCfg.uncriptWifi.uncryptSsid_5g))
+			     phead->next->syncCfg.wifiCfg.encrypt_5g=pdata->syncCfg.wifiCfg.encrypt_5g;
+				 if(strcmp(phead->next->syncCfg.wifiCfg.ssid_5g,pdata->syncCfg.wifiCfg.ssid_5g))
 				  {
-				    memset(phead->next->syncCfg.uncriptWifi.uncryptSsid_5g,0,sizeof(phead->next->syncCfg.uncriptWifi.uncryptSsid_5g));
-			        strcpy(phead->next->syncCfg.uncriptWifi.uncryptSsid_5g,pdata->syncCfg.uncriptWifi.uncryptSsid_5g);
+				    memset(phead->next->syncCfg.wifiCfg.ssid_5g,0,sizeof(phead->next->syncCfg.wifiCfg.ssid_5g));
+			        strcpy(phead->next->syncCfg.wifiCfg.ssid_5g,pdata->syncCfg.wifiCfg.ssid_5g);
 				  }
-			      phead->next->syncCfg.uncriptWifi.encryptMode_2g=pdata->syncCfg.uncriptWifi.encryptMode_2g;
-				  if(strcmp(phead->next->syncCfg.uncriptWifi.uncryptSsid_2g,pdata->syncCfg.uncriptWifi.uncryptSsid_2g))
+				  phead->next->syncCfg.wifiCfg.auth_5g=pdata->syncCfg.wifiCfg.auth_5g;
+		          phead->next->syncCfg.wifiCfg.cipher_5g=pdata->syncCfg.wifiCfg.cipher_5g;
+				  memset(phead->next->syncCfg.wifiCfg.psk_5g,0,sizeof(phead->next->syncCfg.wifiCfg.psk_5g));
+		          strcpy(phead->next->syncCfg.wifiCfg.psk_5g,pdata->syncCfg.wifiCfg.psk_5g);
+				  
+			      phead->next->syncCfg.wifiCfg.encrypt_2g=pdata->syncCfg.wifiCfg.encrypt_2g;
+				  if(strcmp(phead->next->syncCfg.wifiCfg.ssid_2g,pdata->syncCfg.wifiCfg.ssid_2g))
 				  {
-				    memset(phead->next->syncCfg.uncriptWifi.uncryptSsid_2g,0,sizeof(phead->next->syncCfg.uncriptWifi.uncryptSsid_2g));
-			        strcpy(phead->next->syncCfg.uncriptWifi.uncryptSsid_2g,pdata->syncCfg.uncriptWifi.uncryptSsid_2g);
-				  }		  	
+				    memset(phead->next->syncCfg.wifiCfg.ssid_2g,0,sizeof(phead->next->syncCfg.wifiCfg.ssid_2g));
+			        strcpy(phead->next->syncCfg.wifiCfg.ssid_2g,pdata->syncCfg.wifiCfg.ssid_2g);
+				  }		
+				  phead->next->syncCfg.wifiCfg.auth_2g=pdata->syncCfg.wifiCfg.auth_2g;
+		          phead->next->syncCfg.wifiCfg.cipher_2g=pdata->syncCfg.wifiCfg.cipher_2g;
+				  memset(phead->next->syncCfg.wifiCfg.psk_2g,0,sizeof(phead->next->syncCfg.wifiCfg.psk_2g));
+		          strcpy(phead->next->syncCfg.wifiCfg.psk_2g,pdata->syncCfg.wifiCfg.psk_2g);
+				  
 			  }			 
 		     break;
 		    }
@@ -178,24 +190,29 @@ KlinkNode_t *addKlinkListNode_1(KlinkNode_t*head,KlinkNode_t *pdata)
 		{
 		  case KLINK_SLAVE_REPORT_DEVICE_INFO:
 		  {
-		  TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
-		   TRACE_DEBUG("%s_%d:--mac=%s\n ",__FUNCTION__,__LINE__,pdata->slaveDevideInfo.slaveMacAddr);
 		     /*slave device info*/
 		     strcpy(new_node->slaveDevideInfo.slaveMacAddr,pdata->slaveDevideInfo.slaveMacAddr);
-			 	  TRACE_DEBUG("%s_%d:\n ",__FUNCTION__,__LINE__);
 			 strcpy(new_node->slaveDevideInfo.slaveFwVersion,pdata->slaveDevideInfo.slaveFwVersion);
 			  strcpy(new_node->slaveDevideInfo.sn,pdata->slaveDevideInfo.sn);
-			 TRACE_DEBUG("%s_%d:=====>sn=%s===\n ",__FUNCTION__,__LINE__,new_node->slaveDevideInfo.sn);
 
              /*slave led switch cfg*/
 			 new_node->syncCfg.ledSwitch=pdata->syncCfg.ledSwitch;
 
 
-             /*slave uncrypt wifi cfg*/
-			 new_node->syncCfg.uncriptWifi.encryptMode_5g=pdata->syncCfg.uncriptWifi.encryptMode_5g;
-			 strcpy(new_node->syncCfg.uncriptWifi.uncryptSsid_5g,pdata->syncCfg.uncriptWifi.uncryptSsid_5g);
-			 new_node->syncCfg.uncriptWifi.encryptMode_2g=pdata->syncCfg.uncriptWifi.encryptMode_2g;
-			 strcpy(new_node->syncCfg.uncriptWifi.uncryptSsid_2g,pdata->syncCfg.uncriptWifi.uncryptSsid_2g);
+             /*slave  wifi cfg*/
+			 new_node->syncCfg.wifiCfg.encrypt_5g=pdata->syncCfg.wifiCfg.encrypt_5g;
+			 strcpy(new_node->syncCfg.wifiCfg.ssid_5g,pdata->syncCfg.wifiCfg.ssid_5g);
+			 phead->next->syncCfg.wifiCfg.auth_5g=pdata->syncCfg.wifiCfg.auth_5g;
+		     phead->next->syncCfg.wifiCfg.cipher_5g=pdata->syncCfg.wifiCfg.cipher_5g;
+		     memset(phead->next->syncCfg.wifiCfg.psk_5g,0,sizeof(phead->next->syncCfg.wifiCfg.psk_5g));
+		     strcpy(phead->next->syncCfg.wifiCfg.psk_5g,pdata->syncCfg.wifiCfg.psk_5g);
+				  
+			 new_node->syncCfg.wifiCfg.encrypt_2g=pdata->syncCfg.wifiCfg.encrypt_2g;
+			 strcpy(new_node->syncCfg.wifiCfg.ssid_2g,pdata->syncCfg.wifiCfg.ssid_2g);
+			 phead->next->syncCfg.wifiCfg.auth_2g=pdata->syncCfg.wifiCfg.auth_2g;
+		     phead->next->syncCfg.wifiCfg.cipher_2g=pdata->syncCfg.wifiCfg.cipher_2g;
+			 memset(phead->next->syncCfg.wifiCfg.psk_2g,0,sizeof(phead->next->syncCfg.wifiCfg.psk_2g));
+		     strcpy(phead->next->syncCfg.wifiCfg.psk_2g,pdata->syncCfg.wifiCfg.psk_2g);
 
 
 			 /*guest wifi cfg*/
@@ -208,7 +225,7 @@ KlinkNode_t *addKlinkListNode_1(KlinkNode_t*head,KlinkNode_t *pdata)
            once slave device add to mesh network
            */
 		    new_node->syncCfg.ledSyncFlag=SYNC_FLAG_1;
-			new_node->syncCfg.uncriptWifi.uncryptWifiSyncFlag=SYNC_FLAG_1;
+			new_node->syncCfg.wifiCfg.uncryptWifiSyncFlag=SYNC_FLAG_1;
 			new_node->syncCfg.guestWifi.guestSyncFlag=SYNC_FLAG_1;	
 #endif			 
 		  }
@@ -315,29 +332,37 @@ KlinkNode_t *updateKlinkListNodeData(KlinkNode_t*head,cJSON *messageBody)
    			  TRACE_DEBUG("=>get slave led switch ack\n");
 			  break;
   		   	}
-    	   case KLINK_SLAVE_SEND_UNCRYPT_WIFI_SETTING_ACK:
+    	   case KLINK_SLAVE_SEND_WIFI_CFG_SETTING_ACK:
     	   	{
-    	   	  if(jasonObj = cJSON_GetObjectItem(messageBody,"uncrypWifi"))
+    	   	  if(jasonObj = cJSON_GetObjectItem(messageBody,"wifiCfg"))
   		   	  {
   		   	    value=atoi(cJSON_GetObjectItem(jasonObj,"encrypt_5g")->valuestring);
-				if(phead->syncCfg.uncriptWifi.encryptMode_5g!=value)
-				   phead->syncCfg.uncriptWifi.encryptMode_5g=value;
-				if(strcmp(phead->syncCfg.uncriptWifi.uncryptSsid_5g,cJSON_GetObjectItem(jasonObj,"ssid_5g")->valuestring))
+				if(phead->syncCfg.wifiCfg.encrypt_5g!=value)
+				   phead->syncCfg.wifiCfg.encrypt_5g=value;
+				if(strcmp(phead->syncCfg.wifiCfg.ssid_5g,cJSON_GetObjectItem(jasonObj,"ssid_5g")->valuestring))
 				   {
-				      memset(phead->syncCfg.uncriptWifi.uncryptSsid_5g,0,sizeof(phead->syncCfg.uncriptWifi.uncryptSsid_5g));
-					  strcpy(phead->syncCfg.uncriptWifi.uncryptSsid_5g,phead->syncCfg.uncriptWifi.uncryptSsid_5g);
+				      memset(phead->syncCfg.wifiCfg.ssid_5g,0,sizeof(phead->syncCfg.wifiCfg.ssid_5g));
+					  strcpy(phead->syncCfg.wifiCfg.ssid_5g,cJSON_GetObjectItem(jasonObj,"ssid_5g")->valuestring);
 				   }
+			     phead->syncCfg.wifiCfg.auth_5g=atoi(cJSON_GetObjectItem(jasonObj,"auth_5g")->valuestring);
+		         phead->syncCfg.wifiCfg.cipher_5g=atoi(cJSON_GetObjectItem(jasonObj,"cipher_5g")->valuestring);;
+			     memset(phead->syncCfg.wifiCfg.psk_5g,0,sizeof(phead->next->syncCfg.wifiCfg.psk_5g));
+		         strcpy(phead->syncCfg.wifiCfg.psk_5g,cJSON_GetObjectItem(jasonObj,"psk_5g")->valuestring);
 
 				value=atoi(cJSON_GetObjectItem(jasonObj,"encrypt_2g")->valuestring);
-				if(phead->syncCfg.uncriptWifi.encryptMode_2g!=value)
-				   phead->syncCfg.uncriptWifi.encryptMode_2g=value;
-				if(strcmp(phead->syncCfg.uncriptWifi.uncryptSsid_2g,cJSON_GetObjectItem(jasonObj,"ssid_2g")->valuestring))
+				if(phead->syncCfg.wifiCfg.encrypt_2g!=value)
+				   phead->syncCfg.wifiCfg.encrypt_2g=value;
+				if(strcmp(phead->syncCfg.wifiCfg.ssid_2g,cJSON_GetObjectItem(jasonObj,"ssid_2g")->valuestring))
 				   {
-				      memset(phead->syncCfg.uncriptWifi.uncryptSsid_2g,0,sizeof(phead->syncCfg.uncriptWifi.uncryptSsid_2g));
-					  strcpy(phead->syncCfg.uncriptWifi.uncryptSsid_2g,phead->syncCfg.uncriptWifi.uncryptSsid_2g);
+				      memset(phead->syncCfg.wifiCfg.ssid_2g,0,sizeof(phead->syncCfg.wifiCfg.ssid_2g));
+					  strcpy(phead->syncCfg.wifiCfg.ssid_2g,cJSON_GetObjectItem(jasonObj,"ssid_2g")->valuestring);
 				   }
+				 phead->syncCfg.wifiCfg.auth_2g=atoi(cJSON_GetObjectItem(jasonObj,"auth_2g")->valuestring);
+		         phead->syncCfg.wifiCfg.cipher_2g=atoi(cJSON_GetObjectItem(jasonObj,"cipher_2g")->valuestring);;
+			     memset(phead->syncCfg.wifiCfg.psk_2g,0,sizeof(phead->next->syncCfg.wifiCfg.psk_2g));
+		         strcpy(phead->syncCfg.wifiCfg.psk_2g,cJSON_GetObjectItem(jasonObj,"psk_2g")->valuestring);
   		   	  }
-	 	      phead->syncCfg.uncriptWifi.uncryptWifiSyncFlag=SYNC_FLAG_0;
+	 	      phead->syncCfg.wifiCfg.uncryptWifiSyncFlag=SYNC_FLAG_0;
 	  
     		  TRACE_DEBUG("=>get uncrypt wifi setting ack\n");
 			  break;
@@ -366,7 +391,6 @@ KlinkNode_t *updateKlinkListNodeData(KlinkNode_t*head,cJSON *messageBody)
 	else
 	{
 		TRACE_DEBUG("%s_%d:can not find target updade node,fail...\n",__FUNCTION__,__LINE__);
-		TRACE_DEBUG("#################\n");
 	}
 }
 
@@ -374,7 +398,6 @@ KlinkNode_t *updateKlinkListNodeData(KlinkNode_t*head,cJSON *messageBody)
 
 KlinkNode_t* serchKlinkListNode(KlinkNode_t*head,KlinkNode_t *pdata)
 {
-    TRACE_DEBUG("%s_%d: mac=%s\n ",__FUNCTION__,__LINE__,pdata->slaveVersionInfo.slaveMac);
 	KlinkNode_t *phead=head;
 	if(phead==NULL)
 	{
@@ -383,19 +406,16 @@ KlinkNode_t* serchKlinkListNode(KlinkNode_t*head,KlinkNode_t *pdata)
 	}
 	while(strcmp(phead->slaveDevideInfo.slaveMacAddr,pdata->slaveVersionInfo.slaveMac)&&phead->next!=NULL)
 	{   
-	    TRACE_DEBUG("%s_%d: mac=%s\n ",__FUNCTION__,__LINE__,phead->slaveVersionInfo.slaveMac);
 		phead=phead->next;
 	}
 	if(!(strcmp(phead->slaveDevideInfo.slaveMacAddr,pdata->slaveVersionInfo.slaveMac)))
 	{
 		TRACE_DEBUG("serch succed klink node data=%s\n",phead->slaveVersionInfo.slaveMac);
-		TRACE_DEBUG("#################\n");
 		return phead;
 	}
 	else
 	{
 		TRACE_DEBUG("serch failed\n");
-		TRACE_DEBUG("#################\n");
 	}
 }
 
@@ -419,9 +439,7 @@ KlinkNode_t* deletKlinkListNode(KlinkNode_t*head,KlinkNode_t *pdata)
 		if(!strcmp(phead->slaveDevideInfo.slaveMacAddr,pdata->slaveDevideInfo.slaveMacAddr))
 		{
 			q->next=phead->next;
-			TRACE_DEBUG("free %s succed\n",phead->slaveDevideInfo.slaveMacAddr);
 			free(phead);			
-			TRACE_DEBUG("#################\n");
 		}
 		else
 		{
@@ -448,7 +466,6 @@ void showKlinkNode(KlinkNode_t*head)
 			TRACE_DEBUG("show list node date is:slaveSoftVer [%s]\n",phead->next->slaveDevideInfo.slaveMacAddr);
 			phead=phead->next;
 		}
-		TRACE_DEBUG("#################\n");
 	}
 	//TRACE_DEBUG("show list node date is:slaveNum     [%d]\n",g_pKlinkHead->slaveMeshNum);
 	
