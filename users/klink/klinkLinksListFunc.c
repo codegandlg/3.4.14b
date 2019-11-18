@@ -136,15 +136,6 @@ KlinkNode_t *addKlinkListNode_1(KlinkNode_t*head,KlinkNode_t *pdata)
 			}
 		    case KLINK_SLAVE_SEND_WIFI_CFG_SETTING_ACK:
 		    {
-#if 0
-		      if((phead->next->syncCfg.wifiCfg.encrypt_5g!=ENCRYPT_DISABLED)&&
-			  (phead->next->syncCfg.wifiCfg.encrypt_2g!=ENCRYPT_DISABLED))
-		      {
-		     	 break;
-		      }
-			  else
-#endif
-			  {
 			     phead->next->syncCfg.wifiCfg.encrypt_5g=pdata->syncCfg.wifiCfg.encrypt_5g;
 				 if(strcmp(phead->next->syncCfg.wifiCfg.ssid_5g,pdata->syncCfg.wifiCfg.ssid_5g))
 				  {
@@ -155,19 +146,18 @@ KlinkNode_t *addKlinkListNode_1(KlinkNode_t*head,KlinkNode_t *pdata)
 		          phead->next->syncCfg.wifiCfg.cipher_5g=pdata->syncCfg.wifiCfg.cipher_5g;
 				  memset(phead->next->syncCfg.wifiCfg.psk_5g,0,sizeof(phead->next->syncCfg.wifiCfg.psk_5g));
 		          strcpy(phead->next->syncCfg.wifiCfg.psk_5g,pdata->syncCfg.wifiCfg.psk_5g);
-				  
 			      phead->next->syncCfg.wifiCfg.encrypt_2g=pdata->syncCfg.wifiCfg.encrypt_2g;
 				  if(strcmp(phead->next->syncCfg.wifiCfg.ssid_2g,pdata->syncCfg.wifiCfg.ssid_2g))
 				  {
 				    memset(phead->next->syncCfg.wifiCfg.ssid_2g,0,sizeof(phead->next->syncCfg.wifiCfg.ssid_2g));
 			        strcpy(phead->next->syncCfg.wifiCfg.ssid_2g,pdata->syncCfg.wifiCfg.ssid_2g);
-				  }		
+				  }	
 				  phead->next->syncCfg.wifiCfg.auth_2g=pdata->syncCfg.wifiCfg.auth_2g;
 		          phead->next->syncCfg.wifiCfg.cipher_2g=pdata->syncCfg.wifiCfg.cipher_2g;
 				  memset(phead->next->syncCfg.wifiCfg.psk_2g,0,sizeof(phead->next->syncCfg.wifiCfg.psk_2g));
 		          strcpy(phead->next->syncCfg.wifiCfg.psk_2g,pdata->syncCfg.wifiCfg.psk_2g);
 				  
-			  }			 
+			 
 		     break;
 		    }
 		    case KLINK_SLAVE_SEND_GUEST_WIFI_SETTING_ACK:
@@ -200,19 +190,29 @@ KlinkNode_t *addKlinkListNode_1(KlinkNode_t*head,KlinkNode_t *pdata)
 
 
              /*slave  wifi cfg*/
+			   TRACE_DEBUG("====>%s_%d: \n",__FUNCTION__,__LINE__);
 			 new_node->syncCfg.wifiCfg.encrypt_5g=pdata->syncCfg.wifiCfg.encrypt_5g;
 			 strcpy(new_node->syncCfg.wifiCfg.ssid_5g,pdata->syncCfg.wifiCfg.ssid_5g);
-			 phead->next->syncCfg.wifiCfg.auth_5g=pdata->syncCfg.wifiCfg.auth_5g;
-		     phead->next->syncCfg.wifiCfg.cipher_5g=pdata->syncCfg.wifiCfg.cipher_5g;
-		     memset(phead->next->syncCfg.wifiCfg.psk_5g,0,sizeof(phead->next->syncCfg.wifiCfg.psk_5g));
-		     strcpy(phead->next->syncCfg.wifiCfg.psk_5g,pdata->syncCfg.wifiCfg.psk_5g);
+			 TRACE_DEBUG("====>%s_%d:auth_5g=%d \n",__FUNCTION__,__LINE__,pdata->syncCfg.wifiCfg.auth_5g);
+			 TRACE_DEBUG("====>%s_%d:auth_5g=%d \n",__FUNCTION__,__LINE__,phead->syncCfg.wifiCfg.auth_5g);
+			 new_node->syncCfg.wifiCfg.auth_5g=pdata->syncCfg.wifiCfg.auth_5g;
+			                                           
+			   TRACE_DEBUG("====>%s_%d: \n",__FUNCTION__,__LINE__);
+		     new_node->syncCfg.wifiCfg.cipher_5g=pdata->syncCfg.wifiCfg.cipher_5g;
+			   TRACE_DEBUG("====>%s_%d: \n",__FUNCTION__,__LINE__);
+		     memset(new_node->syncCfg.wifiCfg.psk_5g,0,sizeof(phead->syncCfg.wifiCfg.psk_5g));
+			   TRACE_DEBUG("====>%s_%d: \n",__FUNCTION__,__LINE__);
+		     strcpy(new_node->syncCfg.wifiCfg.psk_5g,pdata->syncCfg.wifiCfg.psk_5g);
 				  
 			 new_node->syncCfg.wifiCfg.encrypt_2g=pdata->syncCfg.wifiCfg.encrypt_2g;
 			 strcpy(new_node->syncCfg.wifiCfg.ssid_2g,pdata->syncCfg.wifiCfg.ssid_2g);
-			 phead->next->syncCfg.wifiCfg.auth_2g=pdata->syncCfg.wifiCfg.auth_2g;
-		     phead->next->syncCfg.wifiCfg.cipher_2g=pdata->syncCfg.wifiCfg.cipher_2g;
-			 memset(phead->next->syncCfg.wifiCfg.psk_2g,0,sizeof(phead->next->syncCfg.wifiCfg.psk_2g));
-		     strcpy(phead->next->syncCfg.wifiCfg.psk_2g,pdata->syncCfg.wifiCfg.psk_2g);
+			   TRACE_DEBUG("====>%s_%d: \n",__FUNCTION__,__LINE__);
+			 new_node->syncCfg.wifiCfg.auth_2g=pdata->syncCfg.wifiCfg.auth_2g;
+			   TRACE_DEBUG("====>%s_%d: \n",__FUNCTION__,__LINE__);
+		     new_node->syncCfg.wifiCfg.cipher_2g=pdata->syncCfg.wifiCfg.cipher_2g;
+			   TRACE_DEBUG("====>%s_%d: \n",__FUNCTION__,__LINE__);
+			 memset(new_node->syncCfg.wifiCfg.psk_2g,0,sizeof(new_node->syncCfg.wifiCfg.psk_2g));
+		     strcpy(new_node->syncCfg.wifiCfg.psk_2g,pdata->syncCfg.wifiCfg.psk_2g);
 
 
 			 /*guest wifi cfg*/
